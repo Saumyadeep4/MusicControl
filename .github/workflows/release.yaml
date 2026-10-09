@@ -1,0 +1,47 @@
+name: Release
+
+# Runs whenever you push a tag that starts with "v" (for example v1.1)
+on:
+  push:
+    tags:
+      - "v*"
+
+# Lets the workflow create the release on your behalf
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      # If the build fails because the runner's Xcode is older than yours,
+      # uncomment this and pick an installed version from GitHub's runner list.
+      # - name: Select Xcode
+      #   run: sudo xcode-select -s /Applications/Xcode_XX.app
+
+      - name: Build the app (Release)
+        run: |
+          xcodebuild \
+            -project "Untitled Project.xcodeproj" \
+            -scheme "Untitled Project" \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="-" \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Zip the app
+        run: |
+          APP=$(find build/Build/Products/Release -maxdepth 1 -name "*.app" | head -n 1)
+          echo "Packaging: $APP"
+          ditto -c -k --keepParent "$APP" MusicControl.zip
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MusicControl.zip
+          generate_release_notes: true
