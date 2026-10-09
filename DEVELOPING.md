@@ -6,7 +6,7 @@ Notes for anyone who wants to build MusicControl from source or contribute.
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/Saumyadeep4/MusicControl.git
+   git clone https://github.com/YOUR-USERNAME/MusicControl.git
    cd MusicControl
    ```
 2. Open the `.xcodeproj` file in Xcode.
@@ -22,7 +22,7 @@ Notes for anyone who wants to build MusicControl from source or contribute.
 | File | Purpose |
 | --- | --- |
 | `MyApp.swift` | App entry point and the menu bar item |
-| `PlayerStore.swift` | Reads the current track from Apple Music and sends playback commands via AppleScript |
+| `PlayerStore.swift` | Reads the current track from Apple Music and Spotify, requests automation permission, and sends playback commands via AppleScript |
 | `ContentView.swift` | The menu bar popover UI |
 | `Notch.swift` | The notch window, hover detection and notch UI |
 
@@ -45,7 +45,7 @@ Notes for anyone who wants to build MusicControl from source or contribute.
 
 ## Roadmap
 
-- [ ] Spotify support
+- [x] Spotify support
 - [ ] YouTube Music support
 - [ ] Launch at login
 - [ ] Notarized builds
