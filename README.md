@@ -30,13 +30,13 @@ MusicControl is a small, free Mac app that sits quietly at the top of your scree
 | Music app | Status |
 | --- | --- |
 | Apple Music | Ready |
-| Spotify | Coming soon |
+| Spotify (desktop app) | Ready |
 | YouTube Music | Coming soon |
 
 ## What you need
 
 - A Mac running **macOS 14 (Sonoma) or newer**
-- The **Apple Music** app
+- The **Apple Music** app, the **Spotify desktop app**, or both
 - For the notch player: a MacBook with a notch. Everything else works on any Mac.
 
 ## How to install
@@ -59,10 +59,10 @@ Double-click MusicControl in Applications. macOS will show a message saying it c
 You only need to do this once.
 
 **4. Allow it to control Music**
-macOS will ask if MusicControl can control **Music**. Click **OK**. MusicControl needs this to see the current song and press play, pause and skip for you. It doesn't collect or send any of your information anywhere.
+macOS will ask if MusicControl can control **Music** and **Spotify**, with one message for each app that's open. Click **OK** on each one. MusicControl needs this to see the current song and press play, pause and skip for you. It doesn't collect or share any information about you.
 
 **5. Play a song and look up**
-Start a song in Apple Music. You'll see a small music note in your menu bar. Click it to open the player.
+Start a song in Apple Music or Spotify. You'll see a small music note in your menu bar. Click it to open the player.
 
 ## How to use it
 
@@ -75,9 +75,10 @@ Start a song in Apple Music. You'll see a small music note in your menu bar. Cli
 
 **It says "Nothing playing" but music is playing**
 MusicControl may not have permission yet.
-1. Open **System Settings > Privacy & Security > Automation**.
-2. Find **MusicControl** and make sure the switch next to **Music** is on.
-3. If MusicControl isn't in the list, quit it, open it again, and click **OK** when asked about controlling Music.
+1. Make sure the music app (Apple Music or Spotify) is open, with a song playing.
+2. Open the MusicControl player and click **Allow access to Music & Spotify**. Click **OK** on each message that appears.
+3. Still not working? Click **Open Automation settings** in the same window, find **MusicControl** in the list, and make sure the switches next to **Music** and **Spotify** are on.
+4. Spotify only works with the **desktop app**, not the web player in a browser.
 
 **macOS says the app is "damaged" and can't be opened**
 This is a safety message macOS shows for downloaded apps, and the app isn't actually damaged. To fix it:
@@ -103,10 +104,13 @@ Open the gear menu and turn off **Song name in menu bar**. You can keep just the
 Yes.
 
 **Does it collect any information about me?**
-No. MusicControl only talks to the Music app on your own Mac. It doesn't use the internet and doesn't collect or share anything.
+No. MusicControl only talks to the Music and Spotify apps on your own Mac. The only time it uses the internet is to download the album cover for Spotify songs. It doesn't collect or share anything about you.
 
-**Will it work with Spotify or YouTube Music?**
-Not yet, but they're next on the list. Watch this page for updates.
+**Does it work with Spotify?**
+Yes, with the Spotify desktop app. Spotify songs don't show a playlist name, because Spotify doesn't share it. The Spotify web player in a browser isn't supported.
+
+**What about YouTube Music?**
+Not yet, but it's next on the list. Watch this page for updates.
 
 **Why does macOS warn me when I open it?**
 The app isn't sold through the App Store, so macOS asks you to confirm it. The installation steps above show you how.
