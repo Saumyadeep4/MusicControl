@@ -101,6 +101,11 @@ struct ContentView: View {
                     .foregroundStyle(.white.opacity(0.45))
                     .lineLimit(1)
             }
+            Text(player.source.rawValue.uppercased())
+                .font(.system(size: 9, weight: .semibold))
+                .tracking(1)
+                .foregroundStyle(.white.opacity(0.35))
+                .padding(.top, 2)
         }
         .frame(maxWidth: .infinity)
     }
@@ -193,12 +198,39 @@ struct ContentView: View {
                 .foregroundStyle(.white.opacity(0.5))
             Text("Nothing playing")
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
-            Text("Start a song in Apple Music")
+            Text("Start a song in Apple Music or Spotify")
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.5))
+
+            if !player.lastError.isEmpty {
+                Text(player.lastError)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.red.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .textSelection(.enabled)
+            }
+
+            Button("Allow access to Music & Spotify") { player.requestPermissions() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+            if !player.permissionStatus.isEmpty {
+                Text(player.permissionStatus)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+            }
+
+            Button("Open Automation settings") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            .buttonStyle(.link)
+            .font(.system(size: 10))
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 230)
+        .frame(minHeight: 230)
     }
 
     // MARK: - Footer and settings
