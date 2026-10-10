@@ -6,6 +6,23 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0A324739307A04F2008E8A6A /* MediaRemoteAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 0A324738307A04F2008E8A6A /* MediaRemoteAdapter */; };
+		0A32473A307A04F2008E8A6A /* MediaRemoteAdapter in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 0A324738307A04F2008E8A6A /* MediaRemoteAdapter */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0A32473B307A04F2008E8A6A /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = Frameworks;
+			files = (
+				0A32473A307A04F2008E8A6A /* MediaRemoteAdapter in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* MusicControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -22,6 +39,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				0A324739307A04F2008E8A6A /* MediaRemoteAdapter in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -31,6 +49,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000010 /* MyApp */,
+				0A324737307A04F2008E8A6A /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +62,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		0A324737307A04F2008E8A6A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -53,6 +79,7 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				0A32473B307A04F2008E8A6A /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -60,6 +87,9 @@
 				000000000000000000000010 /* MyApp */,
 			);
 			name = "Untitled Project";
+			packageProductDependencies = (
+				0A324738307A04F2008E8A6A /* MediaRemoteAdapter */,
+			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* MusicControl.app */;
 			productType = "com.apple.product-type.application";
@@ -88,6 +118,9 @@
 			);
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0A324736307A03D9008E8A6A /* XCRemoteSwiftPackageReference "mediaremote-adapter" */,
+			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -254,7 +287,6 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F7GJB8HQJH;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -282,7 +314,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.saumyadeep.musiccontrol;
 				PRODUCT_NAME = MusicControl;
 				REGISTER_APP_GROUPS = YES;
@@ -311,7 +343,6 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F7GJB8HQJH;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -339,7 +370,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.saumyadeep.musiccontrol;
 				PRODUCT_NAME = MusicControl;
 				REGISTER_APP_GROUPS = YES;
@@ -381,6 +412,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0A324736307A03D9008E8A6A /* XCRemoteSwiftPackageReference "mediaremote-adapter" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ejbills/mediaremote-adapter.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0A324738307A04F2008E8A6A /* MediaRemoteAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A324736307A03D9008E8A6A /* XCRemoteSwiftPackageReference "mediaremote-adapter" */;
+			productName = MediaRemoteAdapter;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }
