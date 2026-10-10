@@ -2,15 +2,21 @@ import SwiftUI
 import AppKit
 import Combine
 import ApplicationServices
+import MediaRemoteAdapter
 
-enum MusicSource: String, CaseIterable {
+enum MusicSource: String {
     case appleMusic = "Apple Music"
     case spotify = "Spotify"
+    case system = "Now Playing"
+
+    /// Apps we talk to directly with AppleScript (richer info, e.g. playlist names)
+    static let scriptable: [MusicSource] = [.appleMusic, .spotify]
 
     var appName: String {
         switch self {
         case .appleMusic: return "Music"
         case .spotify: return "Spotify"
+        case .system: return ""
         }
     }
 
@@ -18,11 +24,13 @@ enum MusicSource: String, CaseIterable {
         switch self {
         case .appleMusic: return "com.apple.Music"
         case .spotify: return "com.spotify.client"
+        case .system: return ""
         }
     }
 }
 
-struct TrackInfo {
+/// Our own simple copy of a track. (Named differently from the package's own TrackInfo.)
+struct TrackSnapshot {
     var title: String
     var artist: String
     var album: String
@@ -30,6 +38,14 @@ struct TrackInfo {
     var isPlaying: Bool
     var duration: Double
     var position: Double
+}
+
+/// What the system-wide "Now Playing" feed reports (any app, including browsers)
+struct SystemMedia: @unchecked Sendable {
+    var snapshot: TrackSnapshot
+    var appName: String
+    var bundleID: String
+    var artwork: NSImage?
 }
 
 @MainActor
@@ -42,11 +58,16 @@ final class PlayerStore: ObservableObject {
     @Published var playlist = ""
     @Published var isPlaying = false
     @Published var hasTrack = false
-    @Published var artwork: NSImage?
+    @Published var artwork: NSImage? {
+        didSet { accent = artwork.map { Self.accentColor(from: $0) } ?? .white }
+    }
+    /// A bright colour taken from the cover, used for buttons and the progress bar
+    @Published var accent: Color = .white
     @Published var menuBarArtwork: NSImage?
     @Published var duration: Double = 0
     @Published var position: Double = 0
     @Published var source: MusicSource = .appleMusic
+    @Published var sourceLabel = "Apple Music"
     @Published var lastError = ""
     @Published var permissionStatus = ""
 
@@ -56,8 +77,18 @@ final class PlayerStore: ObservableObject {
     private var artworkTask: Task<Void, Never>?
     private var lastTrackKey = ""
 
+    // System-wide Now Playing
+    private let mediaController = MediaController()
+    private var systemMedia: SystemMedia?
+    private var systemReceivedAt = Date()
+
+    private var showSystemMedia: Bool {
+        UserDefaults.standard.object(forKey: "showSystemMedia") as? Bool ?? true
+    }
+
     init() {
         refresh()
+        startSystemListener()
         task = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
@@ -67,12 +98,70 @@ final class PlayerStore: ObservableObject {
         requestPermissions()
     }
 
-    // MARK: - Permissions
+    // MARK: - System-wide Now Playing (browsers, other players)
 
-    /// Asks macOS for permission to control each music app that is open,
-    /// which shows the "wants to control..." prompt if it hasn't been answered.
+    private func startSystemListener() {
+        mediaController.onTrackInfoReceived = { @Sendable [weak self] info in
+            let media = PlayerStore.makeSystemMedia(from: info)
+            Task { @MainActor in self?.handleSystem(media) }
+        }
+        mediaController.onListenerTerminated = { @Sendable [weak self] in
+            Task { @MainActor in
+                self?.handleSystem(nil)
+                try? await Task.sleep(for: .seconds(1))
+                self?.mediaController.startListening()
+            }
+        }
+        mediaController.startListening()
+    }
+
+    nonisolated private static func makeSystemMedia(from info: TrackInfo?) -> SystemMedia? {
+        guard let p = info?.payload,
+              let title = p.title, !title.isEmpty else { return nil }
+
+        let playing = p.isPlaying ?? ((p.playbackRate ?? 0) > 0)
+        let snapshot = TrackSnapshot(
+            title: title,
+            artist: p.artist ?? "",
+            album: p.album ?? "",
+            playlist: "",
+            isPlaying: playing,
+            duration: (p.durationMicros ?? 0) / 1_000_000,
+            position: p.currentElapsedTime ?? ((p.elapsedTimeMicros ?? 0) / 1_000_000)
+        )
+        return SystemMedia(snapshot: snapshot,
+                           appName: p.applicationName ?? "Now Playing",
+                           bundleID: p.bundleIdentifier ?? "",
+                           artwork: p.artwork)
+    }
+
+    private func handleSystem(_ media: SystemMedia?) {
+        systemMedia = media
+        systemReceivedAt = Date()
+        refresh()
+
+        // Artwork can arrive a moment after the title
+        if source == .system, let art = media?.artwork {
+            artwork = art
+            menuBarArtwork = Self.makeSmall(art)
+        }
+    }
+
+    /// The system track, with the position moved forward since the last update
+    private func currentSystemSnapshot() -> TrackSnapshot? {
+        guard let media = systemMedia else { return nil }
+        var t = media.snapshot
+        if t.isPlaying {
+            t.position += Date().timeIntervalSince(systemReceivedAt)
+        }
+        if t.duration > 0 { t.position = min(t.position, t.duration) }
+        return t
+    }
+
+    // MARK: - Permissions (AppleScript apps only)
+
     func requestPermissions() {
-        let targets = MusicSource.allCases.map {
+        let targets = MusicSource.scriptable.map {
             (name: $0.rawValue, id: $0.bundleID, running: isRunning($0))
         }
 
@@ -102,17 +191,26 @@ final class PlayerStore: ObservableObject {
         return Int(AEDeterminePermissionToAutomateTarget(desc, typeWildCard, typeWildCard, true))
     }
 
-    // MARK: - Deciding which app to show
+    // MARK: - Deciding what to show
 
     private func isRunning(_ source: MusicSource) -> Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: source.bundleID).isEmpty
     }
 
     func refresh() {
-        var found: [(source: MusicSource, info: TrackInfo)] = []
-        for s in MusicSource.allCases where isRunning(s) {
+        var found: [(source: MusicSource, info: TrackSnapshot, label: String)] = []
+
+        for s in MusicSource.scriptable where isRunning(s) {
             if let info = readTrack(from: s) {
-                found.append((s, info))
+                found.append((s, info, s.rawValue))
+            }
+        }
+
+        if showSystemMedia, let media = systemMedia, let info = currentSystemSnapshot() {
+            // Apple Music and Spotify are already covered above with richer data
+            let alreadyCovered = found.contains { $0.source.bundleID == media.bundleID }
+            if !alreadyCovered {
+                found.append((.system, info, media.appName))
             }
         }
 
@@ -122,7 +220,7 @@ final class PlayerStore: ObservableObject {
         }
 
         let playing = found.filter { $0.info.isPlaying }
-        let chosen: (source: MusicSource, info: TrackInfo)
+        let chosen: (source: MusicSource, info: TrackSnapshot, label: String)
         if playing.count == 1 {
             chosen = playing[0]
         } else if let current = found.first(where: { $0.source == source }) {
@@ -130,11 +228,12 @@ final class PlayerStore: ObservableObject {
         } else {
             chosen = found[0]
         }
-        apply(chosen.source, chosen.info)
+        apply(chosen.source, chosen.info, label: chosen.label)
     }
 
-    private func apply(_ s: MusicSource, _ t: TrackInfo) {
+    private func apply(_ s: MusicSource, _ t: TrackSnapshot, label: String) {
         source = s
+        sourceLabel = label
         title = t.title
         artist = t.artist
         album = t.album
@@ -146,16 +245,16 @@ final class PlayerStore: ObservableObject {
         lastError = ""
 
         // Only reload artwork when the song (or the app) changes
-        let key = "\(s.rawValue)|\(t.title)|\(t.artist)|\(t.album)"
+        let key = "\(label)|\(t.title)|\(t.artist)|\(t.album)"
         if key != lastTrackKey {
             lastTrackKey = key
             loadArtwork(for: s, key: key)
         }
     }
 
-    // MARK: - Reading a track
+    // MARK: - Reading a track (AppleScript apps)
 
-    private func readTrack(from source: MusicSource) -> TrackInfo? {
+    private func readTrack(from source: MusicSource) -> TrackSnapshot? {
         let script: String
         switch source {
         case .appleMusic:
@@ -189,6 +288,8 @@ final class PlayerStore: ObservableObject {
                 return t & "|||" & a & "|||" & al & "|||" & "" & "|||" & s & "|||" & d & "|||" & pos
             end tell
             """
+        case .system:
+            return nil
         }
 
         guard let result = run(script)?.stringValue else { return nil }
@@ -203,13 +304,13 @@ final class PlayerStore: ObservableObject {
         // Spotify reports the length in milliseconds
         if source == .spotify && duration > 10_000 { duration /= 1000 }
 
-        return TrackInfo(title: parts[0],
-                         artist: parts[1],
-                         album: parts[2],
-                         playlist: parts[3],
-                         isPlaying: parts[4] == "playing",
-                         duration: duration,
-                         position: Double(parts[6]) ?? 0)
+        return TrackSnapshot(title: parts[0],
+                             artist: parts[1],
+                             album: parts[2],
+                             playlist: parts[3],
+                             isPlaying: parts[4] == "playing",
+                             duration: duration,
+                             position: Double(parts[6]) ?? 0)
     }
 
     // MARK: - Artwork
@@ -260,7 +361,79 @@ final class PlayerStore: ObservableObject {
                 self.artwork = image
                 self.menuBarArtwork = Self.makeSmall(image)
             }
+
+        case .system:
+            if let art = systemMedia?.artwork {
+                artwork = art
+                menuBarArtwork = Self.makeSmall(art)
+            } else {
+                artwork = nil
+                menuBarArtwork = nil
+            }
         }
+    }
+
+    /// Finds the cover's most prominent colour and makes sure it is bright
+    /// enough to read on a pure black background. Grey covers fall back to white.
+    private static func accentColor(from image: NSImage) -> Color {
+        let size = 24
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return .white }
+
+        var pixels = [UInt8](repeating: 0, count: size * size * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let ctx = CGContext(data: buffer.baseAddress,
+                                      width: size, height: size,
+                                      bitsPerComponent: 8, bytesPerRow: size * 4,
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            ctx.interpolationQuality = .medium
+            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: size, height: size))
+            return true
+        }
+        guard drawn else { return .white }
+
+        // Group the colourful pixels into 12 hue buckets and keep the heaviest one
+        let bins = 12
+        var weight = [Double](repeating: 0, count: bins)
+        var sumHue = [Double](repeating: 0, count: bins)
+        var sumSat = [Double](repeating: 0, count: bins)
+        var sumVal = [Double](repeating: 0, count: bins)
+
+        for i in 0..<(size * size) {
+            let r = Double(pixels[i * 4]) / 255
+            let g = Double(pixels[i * 4 + 1]) / 255
+            let b = Double(pixels[i * 4 + 2]) / 255
+            let mx = max(r, g, b), mn = min(r, g, b), d = mx - mn
+            guard mx > 0.15, d > 0.12 else { continue }   // skip near-black and grey pixels
+
+            let sat = d / mx
+            var hue: Double
+            if mx == r {
+                hue = ((g - b) / d).truncatingRemainder(dividingBy: 6)
+            } else if mx == g {
+                hue = (b - r) / d + 2
+            } else {
+                hue = (r - g) / d + 4
+            }
+            hue /= 6
+            if hue < 0 { hue += 1 }
+
+            let w = sat * mx
+            let bin = min(Int(hue * Double(bins)), bins - 1)
+            weight[bin] += w
+            sumHue[bin] += hue * w
+            sumSat[bin] += sat * w
+            sumVal[bin] += mx * w
+        }
+
+        guard let best = weight.indices.max(by: { weight[$0] < weight[$1] }),
+              weight[best] > 2 else { return .white }
+
+        let hue = sumHue[best] / weight[best]
+        let sat = min(max(sumSat[best] / weight[best], 0.5), 0.9)
+        let val = max(sumVal[best] / weight[best], 0.9)
+        return Color(hue: hue, saturation: sat, brightness: val)
     }
 
     /// Shrinks the cover to a small rounded square for the menu bar
@@ -275,16 +448,42 @@ final class PlayerStore: ObservableObject {
         return result
     }
 
-    // MARK: - Controls (sent to whichever app is showing)
+    // MARK: - Controls (sent to whichever source is showing)
 
-    func playPause() { command("playpause") }
-    func next() { command("next track") }
-    func previous() { command("previous track") }
+    func playPause() {
+        if source == .system {
+            mediaController.togglePlayPause()
+        } else {
+            command("playpause")
+        }
+    }
+
+    func next() {
+        if source == .system {
+            mediaController.nextTrack()
+        } else {
+            command("next track")
+        }
+    }
+
+    func previous() {
+        if source == .system {
+            mediaController.previousTrack()
+        } else {
+            command("previous track")
+        }
+    }
 
     func seek(to seconds: Double) {
         let target = max(0, min(seconds, duration))
         position = target
-        _ = run("tell application \"\(source.appName)\" to set player position to \(Int(target))")
+        if source == .system {
+            mediaController.setTime(seconds: target)
+            systemMedia?.snapshot.position = target
+            systemReceivedAt = Date()
+        } else {
+            _ = run("tell application \"\(source.appName)\" to set player position to \(Int(target))")
+        }
     }
 
     private func command(_ cmd: String) {

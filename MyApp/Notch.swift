@@ -5,8 +5,8 @@ import Combine
 // MARK: - Sizes shared by the window and the view
 
 enum NotchMetrics {
-    static let expandedSize = CGSize(width: 380, height: 195)
-    static let panelSize = CGSize(width: 400, height: 210)
+    static let expandedSize = CGSize(width: 380, height: 207)
+    static let panelSize = CGSize(width: 400, height: 222)
 }
 
 final class NotchState: ObservableObject {
@@ -47,6 +47,7 @@ struct NotchView: View {
     let notchWidth: CGFloat
     let notchHeight: CGFloat
     let hasNotch: Bool
+
     @State private var scrubbing = false
     @State private var scrubProgress: CGFloat = 0
 
@@ -60,8 +61,9 @@ struct NotchView: View {
                     expandedContent.transition(.opacity)
                 }
             }
-            // On Macs without a notch, stay fully invisible until hovered
-            .opacity(state.expanded || hasNotch ? 1 : 0)
+            // Draw nothing while collapsed (on every Mac). The black card only
+            // appears when the cursor opens it, growing out of the notch area.
+            .opacity(state.expanded ? 1 : 0)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .animation(.spring(response: 0.38, dampingFraction: 0.78), value: state.expanded)
             .ignoresSafeArea()
@@ -96,9 +98,9 @@ struct NotchView: View {
                     GeometryReader { geo in
                         let shown = scrubbing ? scrubProgress : progress
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.25))
+                            Capsule().fill(player.accent.opacity(0.25))
                                 .frame(height: 4)
-                            Capsule().fill(Color.white)
+                            Capsule().fill(player.accent)
                                 .frame(width: geo.size.width * shown, height: 4)
                         }
                         .frame(height: geo.size.height)
@@ -129,27 +131,27 @@ struct NotchView: View {
                     .foregroundStyle(.white.opacity(0.5))
                 }
 
-                HStack(spacing: 36) {
+                HStack(spacing: 34) {
                     Button { player.previous() } label: { Image(systemName: "backward.fill") }
                     Button { player.playPause() } label: {
                         Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.title)
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(player.accent))
                     }
                     Button { player.next() } label: { Image(systemName: "forward.fill") }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableStyle())
                 .font(.title3)
-                .foregroundStyle(.white)
+                .foregroundStyle(player.accent)
             } else {
-                Spacer()
-                Text("Nothing playing")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
                 Spacer()
             }
         }
         .padding(.horizontal, 22)
         .padding(.bottom, 14)
+        .animation(.easeInOut(duration: 0.35), value: player.accent)
     }
 
     @ViewBuilder
@@ -196,6 +198,7 @@ final class NotchController {
     private let state: NotchState
     private let screen: NSScreen
     private let notchSize: CGSize
+    private let player: PlayerStore
     private var pollTask: Task<Void, Never>?
 
     init(player: PlayerStore) {
@@ -245,8 +248,10 @@ final class NotchController {
         self.notchSize = size
         self.state = state
         self.panel = panel
+        self.player = player
 
-        panel.orderFrontRegardless()
+        // Starts hidden. It only appears once there is media to control.
+        panel.orderOut(nil)
 
         // Check the mouse position several times a second
         pollTask = Task { [weak self] in
@@ -262,9 +267,12 @@ final class NotchController {
     }
 
     private func updateHover() {
-        guard enabled else {
+        // No media loaded (or notch turned off): the notch window is not on screen at all,
+        // so hovering over the notch does nothing.
+        guard enabled, player.hasTrack else {
             if panel.isVisible { panel.orderOut(nil) }
             state.expanded = false
+            panel.ignoresMouseEvents = true
             return
         }
         if !panel.isVisible { panel.orderFrontRegardless() }
