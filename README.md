@@ -130,6 +130,3 @@ No. MusicControl only needs Automation access when you use its direct Apple Musi
 
 Found a problem or have an idea? [Open an issue](../../issues) and tell us what happened, what you expected, and which Mac and macOS version you're using. Screenshots help a lot.
 
-## For developers
-
-Want to build it yourself or contribute? See [DEVELOPING.md](DEVELOPING.md).
