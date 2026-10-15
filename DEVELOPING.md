@@ -25,29 +25,36 @@ Notes for anyone who wants to build MusicControl from source or contribute.
 | `PlayerStore.swift` | Reads the current track from Apple Music and Spotify, requests automation permission, and sends playback commands via AppleScript |
 | `ContentView.swift` | The menu bar popover UI |
 | `Notch.swift` | The notch window, hover detection and notch UI |
+| `Notchpages.swift` | Shared Music and Battery pages used by the popover and notch |
+| `Battery.swift` | Battery and Low Power Mode polling through IOKit |
+| `AudioControl.swift` | System volume, mute, and output-device controls through Core Audio |
+| `Features.swift` | User feature switches and the development-only Pro switch placeholder |
+| `Settingswindow.swift` | Settings window and feature preferences |
 
 ## How it works
 
 - `PlayerStore` polls Apple Music about once per second through AppleScript and publishes the result to the SwiftUI views.
 - Artwork is only reloaded when the track changes.
 - The notch is a borderless, transparent `NSPanel` positioned at the top centre of the screen. A timer checks the cursor position and expands or collapses the card.
-- Settings are stored with `@AppStorage` (`showSongInMenuBar`, `showArtInMenuBar`, `showNotch`).
+- Settings are stored with `@AppStorage` and `UserDefaults` (`showSongInMenuBar`, `showArtInMenuBar`, `showNotch`, `showBattery`, and `showSystemMedia`).
 
 ## Making a release build
 
 1. Choose **Product > Scheme > Edit Scheme**, select **Run**, and set **Build Configuration** to **Release**.
 2. Build with **Command+B**, then open **Product > Show Build Folder in Finder** and find the app under **Products > Release**.
-3. Zip it in a way that keeps the signature intact:
+3. Zip it in a way that keeps the app bundle structure intact:
    ```bash
    ditto -c -k --keepParent MusicControl.app MusicControl.zip
    ```
-4. Attach the zip to a new GitHub Release.
+4. Attach the zip to a new GitHub Release. The repository workflow also builds and uploads a ZIP when a `v*` tag is pushed.
+
+The current workflow uses an ad-hoc CI signature for development releases. A public release should use a Developer ID certificate and Apple notarization before distribution outside the Mac App Store.
 
 ## Roadmap
 
 - [x] Spotify support
 - [ ] YouTube Music support
-- [ ] Launch at login
+- [x] Launch at login
 - [ ] Notarized builds
 
 ## Contributing

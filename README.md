@@ -7,11 +7,11 @@ MusicControl is a small, free Mac app that sits quietly at the top of your scree
 <table>
   <tr>
     <td align="center" valign="top">
-      <img src="screenshots/popover.png" alt="The MusicControl player in the menu bar" width="300"><br>
-      <sub><b>The menu bar player</b></sub>
+      <img src="screenshots/music-control-popover.png" alt="Music Control menu bar player with audio controls" width="300"><br>
+      <sub><b>The menu bar player and audio controls</b></sub>
     </td>
     <td align="center" valign="top">
-      <img src="screenshots/notch.png" alt="The MusicControl mini player in the notch" width="420"><br>
+      <img src="screenshots/music-control-notch.png" alt="Music Control notch mini player" width="420"><br>
       <sub><b>The notch mini player</b></sub>
     </td>
   </tr>
@@ -23,6 +23,8 @@ MusicControl is a small, free Mac app that sits quietly at the top of your scree
 - **A beautiful player in one click.** Big album art, song details, a progress bar, and play, pause and skip buttons. The colours change to match each album.
 - **Hover over the notch.** Move your cursor to the notch and a mini player slides out. Move away and it disappears.
 - **Jump anywhere in a song.** Click or drag the progress bar to skip to any point.
+- **Control system audio.** Adjust volume, mute audio, and switch between speakers, headphones, and other output devices.
+- **Check your battery at a glance.** See charge level, charging state, power source, time remaining, and Low Power Mode.
 - **Make it yours.** Turn the album cover, song name or notch player on or off whenever you like. MusicControl remembers your choices.
 
 ## Works with
@@ -69,6 +71,8 @@ Start a song in Apple Music or Spotify. You'll see a small music note in your me
 - **Click the menu bar icon** to open the player.
 - **Click the gear** at the bottom left of the player to choose what appears in your menu bar and to turn the notch player on or off.
 - **Hover over the notch** for the mini player. Click the progress bar to skip around in the song.
+- **Use the audio row** to adjust volume, mute audio, or choose another connected output device.
+- **Use the page buttons** to switch between Music and Battery.
 - **Click the power button** at the bottom right of the player to quit.
 
 ## Something not working?
@@ -104,7 +108,7 @@ Open the gear menu and turn off **Song name in menu bar**. You can keep just the
 Yes.
 
 **Does it collect any information about me?**
-No. MusicControl only talks to the Music and Spotify apps on your own Mac. The only time it uses the internet is to download the album cover for Spotify songs. It doesn't collect or share anything about you.
+No. MusicControl only talks to media apps and audio devices on your own Mac. It uses the internet for Spotify artwork and optional GitHub update checks. It doesn't collect or share personal information.
 
 **Does it work with Spotify?**
 Yes, with the Spotify desktop app. Spotify songs don't show a playlist name, because Spotify doesn't share it. The Spotify web player in a browser isn't supported.
