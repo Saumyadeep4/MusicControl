@@ -130,3 +130,9 @@ No. MusicControl only needs Automation access when you use its direct Apple Musi
 
 Found a problem or have an idea? [Open an issue](../../issues) and tell us what happened, what you expected, and which Mac and macOS version you're using. Screenshots help a lot.
 
+## About
+
+MusicControl is a free macOS menu-bar and notch companion for controlling media without switching away from the current app. It is built with SwiftUI and AppKit, with system media support provided by [MediaRemoteAdapter](https://github.com/ungive/mediaremote-adapter).
+
+MusicControl is an independent project. It does not collect or sell personal information. Music and Spotify access is handled locally through macOS Automation permissions, while browser and other media support uses macOS Now Playing information.
+
