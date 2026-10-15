@@ -2,11 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var player: PlayerStore
-    @AppStorage("showSongInMenuBar") private var showSong = true
-    @AppStorage("showArtInMenuBar") private var showArt = true
-    @AppStorage("showNotch") private var showNotch = true
+    @ObservedObject private var updater = UpdateChecker.shared
 
-    @State private var showSettings = false
     @State private var scrubbing = false
     @State private var scrubValue: Double = 0
     @State private var hoveringBar = false
@@ -22,14 +19,12 @@ struct ContentView: View {
                 emptyState
             }
             footer
-            if showSettings { settingsPanel }
         }
         .padding(22)
         .frame(width: 320)
         .background { backdrop }
         .clipped()
         .environment(\.colorScheme, .dark)
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: showSettings)
         .animation(.easeInOut(duration: 0.4), value: player.hasTrack)
     }
 
@@ -101,7 +96,7 @@ struct ContentView: View {
                     .foregroundStyle(.white.opacity(0.45))
                     .lineLimit(1)
             }
-            Text(player.source.rawValue.uppercased())
+            Text(player.sourceLabel.uppercased())
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(.white.opacity(0.35))
@@ -198,9 +193,10 @@ struct ContentView: View {
                 .foregroundStyle(.white.opacity(0.5))
             Text("Nothing playing")
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
-            Text("Start a song in Apple Music or Spotify")
+            Text("Start a song in Apple Music, Spotify or a browser")
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
 
             if !player.lastError.isEmpty {
                 Text(player.lastError)
@@ -233,16 +229,33 @@ struct ContentView: View {
         .frame(minHeight: 230)
     }
 
-    // MARK: - Footer and settings
+    // MARK: - Footer
 
     private var footer: some View {
         HStack {
-            Button { showSettings.toggle() } label: {
+            Button { SettingsWindowController.shared.show() } label: {
                 Image(systemName: "gearshape.fill")
-                    .foregroundStyle(showSettings ? .white : .white.opacity(0.5))
+                    .foregroundStyle(.white.opacity(0.5))
             }
             .help("Settings")
+
             Spacer()
+
+            if updater.hasUpdate {
+                Button {
+                    SettingsWindowController.shared.show(page: .updates)
+                } label: {
+                    Text("Update available")
+                        .font(.system(size: 10, weight: .semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.green.opacity(0.85)))
+                        .foregroundStyle(.black)
+                }
+            }
+
+            Spacer()
+
             Button { NSApplication.shared.terminate(nil) } label: {
                 Image(systemName: "power")
                     .foregroundStyle(.white.opacity(0.5))
@@ -251,29 +264,6 @@ struct ContentView: View {
         }
         .font(.system(size: 14))
         .buttonStyle(PressableStyle())
-    }
-
-    private var settingsPanel: some View {
-        VStack(spacing: 10) {
-            settingRow("Album art in menu bar", isOn: $showArt)
-            settingRow("Song name in menu bar", isOn: $showSong)
-            settingRow("Notch display", isOn: $showNotch)
-        }
-        .font(.system(size: 12))
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.08)))
-        .transition(.opacity.combined(with: .move(edge: .bottom)))
-    }
-
-    private func settingRow(_ label: String, isOn: Binding<Bool>) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-        }
     }
 
     private func format(_ seconds: Double) -> String {

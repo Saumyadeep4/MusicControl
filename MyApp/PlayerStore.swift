@@ -83,7 +83,7 @@ final class PlayerStore: ObservableObject {
     private var systemReceivedAt = Date()
 
     private var showSystemMedia: Bool {
-        UserDefaults.standard.object(forKey: "showSystemMedia") as? Bool ?? true
+        FeatureAccess.shared.isActive(.browserMedia)
     }
 
     init() {

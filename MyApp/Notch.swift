@@ -263,7 +263,7 @@ final class NotchController {
     }
 
     private var enabled: Bool {
-        UserDefaults.standard.object(forKey: "showNotch") as? Bool ?? true
+        FeatureAccess.shared.isActive(.notch)
     }
 
     private func updateHover() {
@@ -310,5 +310,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         notch = NotchController(player: PlayerStore.shared)
+        UpdateChecker.shared.checkOnLaunchIfNeeded()
     }
 }
