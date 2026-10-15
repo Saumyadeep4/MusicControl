@@ -24,6 +24,8 @@ jobs:
 
       - name: Build the app (Release)
         run: |
+          # Tag v2.1 becomes app version 2.1, so the in-app update check matches
+          VERSION="${GITHUB_REF_NAME#v}"
           xcodebuild \
             -project "Untitled Project.xcodeproj" \
             -scheme "Untitled Project" \
@@ -32,6 +34,8 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             build
 
       - name: Zip the app
