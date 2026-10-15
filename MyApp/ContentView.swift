@@ -2,21 +2,25 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var player: PlayerStore
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject private var updater = UpdateChecker.shared
+    @ObservedObject private var features = FeatureAccess.shared
+
+    @State private var selectedPage: NotchPage = .music
 
     @State private var scrubbing = false
     @State private var scrubValue: Double = 0
     @State private var hoveringBar = false
 
     var body: some View {
-        VStack(spacing: 18) {
-            if player.hasTrack {
-                artworkView
-                titleBlock
-                scrubber
-                controls
-            } else {
-                emptyState
+        let pages = availableNotchPages(player: player, includeIdleMusic: true)
+        return VStack(spacing: 18) {
+            pageContent(currentPage(in: pages))
+
+            if pages.count > 1 {
+                NotchPageSwitcher(pages: pages, current: currentPage(in: pages), accent: player.accent) {
+                    selectedPage = $0
+                }
             }
             footer
         }
@@ -25,7 +29,35 @@ struct ContentView: View {
         .background { backdrop }
         .clipped()
         .environment(\.colorScheme, .dark)
-        .animation(.easeInOut(duration: 0.4), value: player.hasTrack)
+        .onChange(of: pages) { _, newPages in
+            if !newPages.contains(selectedPage) { selectedPage = newPages.first ?? .music }
+        }
+    }
+
+    @ViewBuilder
+    private func pageContent(_ page: NotchPage) -> some View {
+        switch page {
+        case .music:
+            Group {
+                if player.hasTrack {
+                    VStack(spacing: 18) {
+                        artworkView
+                        titleBlock
+                        scrubber
+                        controls
+                        AudioControlBar()
+                    }
+                } else {
+                    emptyState
+                }
+            }
+        case .battery:
+            NotchBatteryPage()
+        }
+    }
+
+    private func currentPage(in pages: [NotchPage]) -> NotchPage {
+        pages.contains(selectedPage) ? selectedPage : (pages.first ?? .music)
     }
 
     // MARK: - Background
@@ -233,7 +265,7 @@ struct ContentView: View {
 
     private var footer: some View {
         HStack {
-            Button { SettingsWindowController.shared.show() } label: {
+            Button { openSettings() } label: {
                 Image(systemName: "gearshape.fill")
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -243,7 +275,7 @@ struct ContentView: View {
 
             if updater.hasUpdate {
                 Button {
-                    SettingsWindowController.shared.show(page: .updates)
+                    openSettings(page: .updates)
                 } label: {
                     Text("Update available")
                         .font(.system(size: 10, weight: .semibold))
@@ -269,6 +301,14 @@ struct ContentView: View {
     private func format(_ seconds: Double) -> String {
         let total = Int(seconds)
         return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
+    private func openSettings(page: SettingsView.Page? = nil) {
+        // A MenuBarExtra window otherwise remains above Settings and obscures it.
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            SettingsWindowController.shared.show(page: page)
+        }
     }
 }
 

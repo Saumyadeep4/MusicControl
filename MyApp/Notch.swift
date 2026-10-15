@@ -5,8 +5,8 @@ import Combine
 // MARK: - Sizes shared by the window and the view
 
 enum NotchMetrics {
-    static let expandedSize = CGSize(width: 380, height: 207)
-    static let panelSize = CGSize(width: 400, height: 222)
+    static let expandedSize = CGSize(width: 380, height: 252)
+    static let panelSize = CGSize(width: 400, height: 270)
 }
 
 final class NotchState: ObservableObject {
@@ -48,8 +48,7 @@ struct NotchView: View {
     let notchHeight: CGFloat
     let hasNotch: Bool
 
-    @State private var scrubbing = false
-    @State private var scrubProgress: CGFloat = 0
+    @State private var selectedPage: NotchPage = .music
 
     var body: some View {
         NotchShape(bottomRadius: state.expanded ? 26 : 10)
@@ -70,116 +69,38 @@ struct NotchView: View {
     }
 
     private var expandedContent: some View {
-        VStack(spacing: 10) {
+        let pages = availableNotchPages(player: player)
+        return VStack(spacing: 8) {
             // Keeps everything below the physical notch
             Spacer().frame(height: notchHeight)
 
-            if player.hasTrack {
-                HStack(spacing: 12) {
-                    artwork(size: 60, radius: 10)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(player.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        Text(player.artist)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.7))
-                            .lineLimit(1)
-                        Text(player.album)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .lineLimit(1)
-                    }
-                    Spacer(minLength: 0)
+            if pages.count > 1 {
+                NotchPageSwitcher(pages: pages, current: currentPage(in: pages), accent: player.accent) {
+                    selectedPage = $0
                 }
-
-                VStack(spacing: 3) {
-                    GeometryReader { geo in
-                        let shown = scrubbing ? scrubProgress : progress
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(player.accent.opacity(0.25))
-                                .frame(height: 4)
-                            Capsule().fill(player.accent)
-                                .frame(width: geo.size.width * shown, height: 4)
-                        }
-                        .frame(height: geo.size.height)
-                        .contentShape(Rectangle())
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { value in
-                                    scrubbing = true
-                                    player.isScrubbing = true
-                                    scrubProgress = min(max(value.location.x / geo.size.width, 0), 1)
-                                }
-                                .onEnded { value in
-                                    let p = min(max(value.location.x / geo.size.width, 0), 1)
-                                    player.seek(to: Double(p) * player.duration)
-                                    scrubbing = false
-                                    player.isScrubbing = false
-                                }
-                        )
-                    }
-                    .frame(height: 16)
-
-                    HStack {
-                        Text(format(scrubbing ? Double(scrubProgress) * player.duration : player.position))
-                        Spacer()
-                        Text(format(player.duration))
-                    }
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
-                }
-
-                HStack(spacing: 34) {
-                    Button { player.previous() } label: { Image(systemName: "backward.fill") }
-                    Button { player.playPause() } label: {
-                        Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(.black)
-                            .frame(width: 38, height: 38)
-                            .background(Circle().fill(player.accent))
-                    }
-                    Button { player.next() } label: { Image(systemName: "forward.fill") }
-                }
-                .buttonStyle(PressableStyle())
-                .font(.title3)
-                .foregroundStyle(player.accent)
-            } else {
-                Spacer()
             }
+
+            pageContent(currentPage(in: pages))
+                .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 22)
         .padding(.bottom, 14)
-        .animation(.easeInOut(duration: 0.35), value: player.accent)
+        .onChange(of: pages) { _, newPages in
+            if !newPages.contains(selectedPage) { selectedPage = newPages.first ?? .music }
+        }
     }
 
     @ViewBuilder
-    private func artwork(size: CGFloat, radius: CGFloat) -> some View {
-        if let art = player.artwork {
-            Image(nsImage: art)
-                .resizable()
-                .scaledToFill()
-                .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: radius))
-        } else {
-            RoundedRectangle(cornerRadius: radius)
-                .fill(Color.white.opacity(0.15))
-                .frame(width: size, height: size)
-                .overlay(Image(systemName: "music.note")
-                    .font(.system(size: size * 0.4))
-                    .foregroundStyle(.white.opacity(0.7)))
+    private func pageContent(_ page: NotchPage) -> some View {
+        switch page {
+        case .music:
+            NotchMusicPage().environmentObject(player)
+        case .battery:
+            NotchBatteryPage()
         }
     }
 
-    private var progress: CGFloat {
-        guard player.duration > 0 else { return 0 }
-        return CGFloat(min(player.position / player.duration, 1))
-    }
-
-    private func format(_ seconds: Double) -> String {
-        let total = Int(seconds)
-        return String(format: "%d:%02d", total / 60, total % 60)
+    private func currentPage(in pages: [NotchPage]) -> NotchPage {
+        pages.contains(selectedPage) ? selectedPage : (pages.first ?? .music)
     }
 }
 
@@ -269,7 +190,7 @@ final class NotchController {
     private func updateHover() {
         // No media loaded (or notch turned off): the notch window is not on screen at all,
         // so hovering over the notch does nothing.
-        guard enabled, player.hasTrack else {
+        guard enabled, !availableNotchPages(player: player).isEmpty else {
             if panel.isVisible { panel.orderOut(nil) }
             state.expanded = false
             panel.ignoresMouseEvents = true
