@@ -5,8 +5,8 @@ import Combine
 // MARK: - Sizes shared by the window and the view
 
 enum NotchMetrics {
-    static let expandedSize = CGSize(width: 380, height: 252)
-    static let panelSize = CGSize(width: 400, height: 270)
+    static let expandedSize = CGSize(width: 380, height: 207)
+    static let panelSize = CGSize(width: 400, height: 222)
 }
 
 final class NotchState: ObservableObject {
@@ -70,18 +70,37 @@ struct NotchView: View {
 
     private var expandedContent: some View {
         let pages = availableNotchPages(player: player)
-        return VStack(spacing: 8) {
-            // Keeps everything below the physical notch
-            Spacer().frame(height: notchHeight)
-
-            if pages.count > 1 {
-                NotchPageSwitcher(pages: pages, current: currentPage(in: pages), accent: player.accent) {
-                    selectedPage = $0
-                }
+        return ZStack(alignment: .top) {
+            VStack(spacing: 8) {
+                // Keeps the page content below the physical notch.
+                Spacer().frame(height: notchHeight)
+                pageContent(currentPage(in: pages))
+                    .frame(maxWidth: .infinity)
             }
 
-            pageContent(currentPage(in: pages))
-                .frame(maxWidth: .infinity)
+            // The physical notch occupies the centre. Put the page controls in
+            // the unused left/right pockets instead of adding another row below it.
+            if pages.count > 1 {
+                HStack(spacing: 0) {
+                    ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+                        if index > 0 { Spacer(minLength: 0) }
+                        Button {
+                            selectedPage = page
+                        } label: {
+                            Image(systemName: page.icon)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(page == currentPage(in: pages)
+                                                 ? player.accent
+                                                 : Color.white.opacity(0.42))
+                                .frame(width: 28, height: 24)
+                        }
+                        .buttonStyle(.plain)
+                        .help(page.title)
+                    }
+                }
+                .padding(.horizontal, 30)
+                .padding(.top, 4)
+            }
         }
         .padding(.bottom, 14)
         .onChange(of: pages) { _, newPages in
