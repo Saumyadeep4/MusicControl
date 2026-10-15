@@ -5,14 +5,16 @@ import Combine
 
 enum Feature: String, CaseIterable, Identifiable {
     case notch
+    case battery
     case browserMedia
-    // Add new features here as they get built (playlists, shuffle, calendar...).
+    // Add music-related options here as they get built.
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .notch:        return "Notch player"
+        case .battery:      return "Battery"
         case .browserMedia: return "Browsers & other apps"
         }
     }
@@ -21,6 +23,8 @@ enum Feature: String, CaseIterable, Identifiable {
         switch self {
         case .notch:
             return "Hover over the notch to open a mini player. It only appears while something is loaded."
+        case .battery:
+            return "Show a compact charge, power and time-remaining glance in the notch and menu-bar popover."
         case .browserMedia:
             return "Show music and video from browsers, Podcasts, TV, QuickTime and other apps."
         }
@@ -29,6 +33,7 @@ enum Feature: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .notch:        return "rectangle.topthird.inset.filled"
+        case .battery:      return "battery.100"
         case .browserMedia: return "globe"
         }
     }
@@ -39,6 +44,7 @@ enum Feature: String, CaseIterable, Identifiable {
     var defaultIsPro: Bool {
         switch self {
         case .notch:        return false
+        case .battery:      return false
         case .browserMedia: return false
         }
     }
@@ -51,6 +57,7 @@ enum Feature: String, CaseIterable, Identifiable {
     var enabledKey: String {
         switch self {
         case .notch:        return "showNotch"
+        case .battery:      return "showBattery"
         case .browserMedia: return "showSystemMedia"
         }
     }
