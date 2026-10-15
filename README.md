@@ -1,4 +1,4 @@
-# MusicControl
+# Music Control
 
 **See what's playing and control your music, right from your menu bar and your MacBook's notch.**
 
