@@ -203,6 +203,8 @@ struct ContentView: View {
             Button { player.previous() } label: {
                 Image(systemName: "backward.fill").font(.system(size: 22))
             }
+            .accessibilityLabel("Previous track")
+            .keyboardShortcut(.leftArrow, modifiers: [])
             Button { player.playPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 26))
@@ -211,9 +213,13 @@ struct ContentView: View {
                     .background(Circle().fill(.white))
                     .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
             }
+            .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
+            .keyboardShortcut(.space, modifiers: [])
             Button { player.next() } label: {
                 Image(systemName: "forward.fill").font(.system(size: 22))
             }
+            .accessibilityLabel("Next track")
+            .keyboardShortcut(.rightArrow, modifiers: [])
         }
         .buttonStyle(PressableStyle())
     }

@@ -32,10 +32,12 @@ final class PlaybackOptionsStore: ObservableObject {
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 self?.refresh()
-                try? await Task.sleep(for: .seconds(3))
+                try? await Task.sleep(for: .seconds(5))
             }
         }
     }
+
+    deinit { pollTask?.cancel() }
 
     // MARK: - Reading
 

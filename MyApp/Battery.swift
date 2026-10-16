@@ -22,11 +22,13 @@ final class BatteryStore: ObservableObject {
         refresh()
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
+                try? await Task.sleep(for: .seconds(15))
                 self?.refresh()
             }
         }
     }
+
+    deinit { pollTask?.cancel() }
 
     // MARK: - Reading the battery
 
