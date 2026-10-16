@@ -82,20 +82,12 @@ struct NotchView: View {
             // the unused left/right pockets instead of adding another row below it.
             if pages.count > 1 {
                 HStack(spacing: 0) {
-                    ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
-                        if index > 0 { Spacer(minLength: 0) }
-                        Button {
-                            selectedPage = page
-                        } label: {
-                            Image(systemName: page.icon)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(page == currentPage(in: pages)
-                                                 ? player.accent
-                                                 : Color.white.opacity(0.42))
-                                .frame(width: 28, height: 24)
+                    pocketButton(pages[0], pages: pages)
+                    Spacer(minLength: 0)
+                    HStack(spacing: 4) {
+                        ForEach(pages.dropFirst()) { page in
+                            pocketButton(page, pages: pages)
                         }
-                        .buttonStyle(.plain)
-                        .help(page.title)
                     }
                 }
                 .padding(.horizontal, 30)
@@ -106,6 +98,21 @@ struct NotchView: View {
         .onChange(of: pages) { _, newPages in
             if !newPages.contains(selectedPage) { selectedPage = newPages.first ?? .music }
         }
+    }
+
+    private func pocketButton(_ page: NotchPage, pages: [NotchPage]) -> some View {
+        Button {
+            selectedPage = page
+        } label: {
+            Image(systemName: page.icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(page == currentPage(in: pages)
+                                 ? player.accent
+                                 : Color.white.opacity(0.42))
+                .frame(width: 28, height: 24)
+        }
+        .buttonStyle(.plain)
+        .help(page.title)
     }
 
     @ViewBuilder

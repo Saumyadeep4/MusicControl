@@ -45,7 +45,9 @@ struct ContentView: View {
                         titleBlock
                         scrubber
                         controls
-                        AudioControlBar()
+                        if features.isActive(.audioControls) {
+                            AudioControlBar()
+                        }
                     }
                 } else {
                     emptyState

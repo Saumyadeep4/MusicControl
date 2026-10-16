@@ -7,7 +7,8 @@ enum Feature: String, CaseIterable, Identifiable {
     case notch
     case battery
     case browserMedia
-    // Add music-related options here as they get built.
+    case audioControls
+    case shuffleRepeat
 
     var id: String { rawValue }
 
@@ -16,6 +17,8 @@ enum Feature: String, CaseIterable, Identifiable {
         case .notch:        return "Notch player"
         case .battery:      return "Battery"
         case .browserMedia: return "Browsers & other apps"
+        case .audioControls: return "Audio controls"
+        case .shuffleRepeat: return "Shuffle and repeat"
         }
     }
 
@@ -27,6 +30,10 @@ enum Feature: String, CaseIterable, Identifiable {
             return "Show a compact charge, power and time-remaining glance in the notch and menu-bar popover."
         case .browserMedia:
             return "Show music and video from browsers, Podcasts, TV, QuickTime and other apps."
+        case .audioControls:
+            return "Control volume, mute state and the current audio output device."
+        case .shuffleRepeat:
+            return "Show shuffle and repeat controls for Apple Music and Spotify."
         }
     }
 
@@ -35,6 +42,8 @@ enum Feature: String, CaseIterable, Identifiable {
         case .notch:        return "rectangle.topthird.inset.filled"
         case .battery:      return "battery.100"
         case .browserMedia: return "globe"
+        case .audioControls: return "speaker.wave.2"
+        case .shuffleRepeat: return "repeat"
         }
     }
 
@@ -46,6 +55,8 @@ enum Feature: String, CaseIterable, Identifiable {
         case .notch:        return false
         case .battery:      return false
         case .browserMedia: return false
+        case .audioControls: return false
+        case .shuffleRepeat: return false
         }
     }
 
@@ -59,6 +70,8 @@ enum Feature: String, CaseIterable, Identifiable {
         case .notch:        return "showNotch"
         case .battery:      return "showBattery"
         case .browserMedia: return "showSystemMedia"
+        case .audioControls: return "showAudioControls"
+        case .shuffleRepeat: return "showShuffleRepeat"
         }
     }
 
