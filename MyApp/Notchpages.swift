@@ -120,9 +120,6 @@ struct NotchMusicPage: View {
             progressBar
 
             controls
-            if features.isActive(.audioControls) {
-                AudioControlBar()
-            }
         }
         .padding(.horizontal, 22)
         .animation(.easeInOut(duration: 0.35), value: player.accent)
