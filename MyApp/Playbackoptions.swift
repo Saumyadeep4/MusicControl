@@ -1,10 +1,3 @@
-//
-//  Playbackoptions.swift
-//  Untitled Project
-//
-//  Created by Saumyadeep Chakraborty on 16-10-2026.
-//
-
 import SwiftUI
 import AppKit
 import Combine
@@ -32,12 +25,10 @@ final class PlaybackOptionsStore: ObservableObject {
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 self?.refresh()
-                try? await Task.sleep(for: .seconds(5))
+                try? await Task.sleep(for: .seconds(3))
             }
         }
     }
-
-    deinit { pollTask?.cancel() }
 
     // MARK: - Reading
 

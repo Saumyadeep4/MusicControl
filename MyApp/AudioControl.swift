@@ -28,10 +28,10 @@ final class AudioControlStore: ObservableObject {
     /// remains as a fallback for devices with incomplete metadata.
     var outputIcon: String {
         let name = outputName.lowercased()
-        if name.contains("airpods max") || name.contains("airpodsmax") { return "airpodsmax" }
-        if name.contains("airpods pro") || name.contains("airpodspro") { return "airpodspro" }
-        if name.contains("airpod") { return "airpods" }
-        if name.contains("homepod") { return "homepod.fill" }
+        if name.contains("airpods max") || name.contains("airpodsmax") || name.contains("max") { return "airpodsmax" }
+        if name.contains("airpods pro") || name.contains("airpodspro") || name.contains("pro") || name.contains("anti-noise machine") { return "airpodspro" }
+        if name.contains("airpod") || name.contains("pods") { return "airpods" }
+        if name.contains("homepod") || name.contains("pod") { return "homepod.fill" }
 
         switch outputTransportType {
         case kAudioDeviceTransportTypeBuiltIn:

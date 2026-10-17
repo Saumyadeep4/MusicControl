@@ -5,20 +5,21 @@ import Combine
 
 enum Feature: String, CaseIterable, Identifiable {
     case notch
-    case battery
-    case browserMedia
-    case audioControls
     case shuffleRepeat
+    case audioControl
+    case browserMedia
+    case battery
+    // Add new features here as they get built (playlists, calendar, mirror, shelf...).
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .notch:        return "Notch player"
-        case .battery:      return "Battery"
-        case .browserMedia: return "Browsers & other apps"
-        case .audioControls: return "Audio controls"
-        case .shuffleRepeat: return "Shuffle and repeat"
+        case .notch:         return "Notch player"
+        case .shuffleRepeat: return "Shuffle & repeat"
+        case .audioControl:  return "Volume & output"
+        case .browserMedia:  return "Browsers & other apps"
+        case .battery:       return "Battery"
         }
     }
 
@@ -26,24 +27,24 @@ enum Feature: String, CaseIterable, Identifiable {
         switch self {
         case .notch:
             return "Hover over the notch to open a mini player. It only appears while something is loaded."
-        case .battery:
-            return "Show a compact charge, power and time-remaining glance in the notch and menu-bar popover."
+        case .shuffleRepeat:
+            return "Shuffle and repeat buttons next to the playback controls, for Apple Music and Spotify."
+        case .audioControl:
+            return "A volume slider, mute button and output picker (speakers, headphones, AirPlay) under the player."
         case .browserMedia:
             return "Show music and video from browsers, Podcasts, TV, QuickTime and other apps."
-        case .audioControls:
-            return "Control volume, mute state and the current audio output device."
-        case .shuffleRepeat:
-            return "Show shuffle and repeat controls for Apple Music and Spotify."
+        case .battery:
+            return "A compact charge, power and time-remaining page in the notch and the menu bar player."
         }
     }
 
     var systemImage: String {
         switch self {
-        case .notch:        return "rectangle.topthird.inset.filled"
-        case .battery:      return "battery.100"
-        case .browserMedia: return "globe"
-        case .audioControls: return "speaker.wave.2"
-        case .shuffleRepeat: return "repeat"
+        case .notch:         return "rectangle.topthird.inset.filled"
+        case .shuffleRepeat: return "shuffle"
+        case .audioControl:  return "speaker.wave.2"
+        case .browserMedia:  return "globe"
+        case .battery:       return "battery.100"
         }
     }
 
@@ -52,11 +53,11 @@ enum Feature: String, CaseIterable, Identifiable {
     /// false (0) = free for everyone
     var defaultIsPro: Bool {
         switch self {
-        case .notch:        return false
-        case .battery:      return false
-        case .browserMedia: return false
-        case .audioControls: return false
-        case .shuffleRepeat: return false
+        case .notch:         return true
+        case .shuffleRepeat: return true
+        case .audioControl:  return true
+        case .browserMedia:  return true
+        case .battery:       return true
         }
     }
 
@@ -64,14 +65,14 @@ enum Feature: String, CaseIterable, Identifiable {
     var defaultEnabled: Bool { true }
 
     /// UserDefaults key for the user's own on/off switch.
-    /// (These two keep the names the app already used.)
+    /// (Keep these names stable, so people's choices survive updates.)
     var enabledKey: String {
         switch self {
-        case .notch:        return "showNotch"
-        case .battery:      return "showBattery"
-        case .browserMedia: return "showSystemMedia"
-        case .audioControls: return "showAudioControls"
+        case .notch:         return "showNotch"
         case .shuffleRepeat: return "showShuffleRepeat"
+        case .audioControl:  return "showAudioControls"
+        case .browserMedia:  return "showSystemMedia"
+        case .battery:       return "showBattery"
         }
     }
 

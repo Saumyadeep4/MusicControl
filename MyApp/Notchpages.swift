@@ -188,8 +188,6 @@ struct NotchMusicPage: View {
             }
 
             Button { player.previous() } label: { Image(systemName: "backward.fill") }
-                .accessibilityLabel("Previous track")
-                .keyboardShortcut(.leftArrow, modifiers: [])
 
             Button { player.playPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -198,12 +196,8 @@ struct NotchMusicPage: View {
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(player.accent))
             }
-            .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
-            .keyboardShortcut(.space, modifiers: [])
 
             Button { player.next() } label: { Image(systemName: "forward.fill") }
-                .accessibilityLabel("Next track")
-                .keyboardShortcut(.rightArrow, modifiers: [])
 
             if showsModes {
                 RepeatButton(active: player.accent, inactive: Color.white.opacity(0.4))
@@ -292,15 +286,10 @@ struct NotchBatteryPage: View {
                 if battery.lowPowerMode {
                     Label("Low Power", systemImage: "leaf.fill")
                         .foregroundStyle(Color.yellow)
-                } else if !battery.onACPower && battery.percent <= 20 {
-                    Label("Low Battery", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(Color.red)
                 }
             }
             .font(.system(size: 10, weight: .medium))
             .foregroundStyle(Color.white.opacity(0.58))
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Battery status: \(battery.statusText)")
         }
         .padding(.horizontal, 22)
     }
