@@ -21,6 +21,7 @@ final class AudioControlStore: ObservableObject {
     @Published private(set) var outputName = "Mac audio"
     @Published private(set) var outputID: AudioDeviceID = 0
     @Published private(set) var outputs: [AudioOutputDevice] = []
+    private var outputTransportType: UInt32 = 0
 
     /// An output-specific symbol makes the picker easier to scan than a generic
     /// AirPlay icon. Device names are the most portable signal across macOS outputs.
@@ -41,6 +42,10 @@ final class AudioControlStore: ObservableObject {
         }
         if name.contains("speaker") || name.contains("homepod") {
             return "hifispeaker.fill"
+        }
+        if outputTransportType == kAudioDeviceTransportTypeBluetooth ||
+            outputTransportType == kAudioDeviceTransportTypeBluetoothLE {
+            return "airpods"
         }
         return "waveform"
     }
@@ -66,6 +71,7 @@ final class AudioControlStore: ObservableObject {
 
         outputID = device
         outputName = deviceName(device) ?? "Mac audio"
+        outputTransportType = transportType(device)
 
         let volumeElements = controlElements(device, kAudioDevicePropertyVolumeScalar)
         canSetVolume = !volumeElements.isEmpty
@@ -204,6 +210,18 @@ final class AudioControlStore: ObservableObject {
         guard status == noErr, let name else { return nil }
         // CoreAudio gives us a string we own, so take it as retained to avoid a leak
         return name.takeRetainedValue() as String
+    }
+
+    private func transportType(_ device: AudioDeviceID) -> UInt32 {
+        var addr = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(device, &addr, 0, nil, &size, &value) == noErr else { return 0 }
+        return value
     }
 
     // MARK: - Volume and mute plumbing
