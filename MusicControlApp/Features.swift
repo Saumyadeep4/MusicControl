@@ -89,14 +89,16 @@ final class FeatureAccess: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
-    /// PLACEHOLDER for the real licence check. For now it is just a switch
-    /// (Settings > Developer > "Simulate Pro unlocked"). Replace with real licensing later.
+    /// Placeholder for the future licence check. The current public build is
+    /// the free edition, so it must always start locked until real licensing
+    /// is implemented. This deliberately ignores any old developer preference
+    /// left behind by an earlier test build.
     @Published var proUnlocked: Bool {
         didSet { defaults.set(proUnlocked, forKey: "license.proUnlocked") }
     }
 
     init() {
-        proUnlocked = UserDefaults.standard.bool(forKey: "license.proUnlocked")
+        proUnlocked = false
     }
 
     // The user's on/off switch
@@ -105,6 +107,7 @@ final class FeatureAccess: ObservableObject {
     }
 
     func setEnabled(_ feature: Feature, _ value: Bool) {
+        guard !isLocked(feature) else { return }
         defaults.set(value, forKey: feature.enabledKey)
         objectWillChange.send()
     }
