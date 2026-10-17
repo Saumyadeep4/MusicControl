@@ -112,10 +112,11 @@ final class FeatureAccess: ObservableObject {
         objectWillChange.send()
     }
 
-    // The Pro switch (1 = behind the paywall). Starts from the table in `Feature.defaultIsPro`,
-    // and can be flipped at run time from Settings > Developer.
+    // The public build uses the feature table as the source of truth. Older
+    // developer builds could persist `pro.*` overrides, but those must not
+    // silently turn a paid feature into a free one after an update.
     func isPro(_ feature: Feature) -> Bool {
-        defaults.object(forKey: feature.proKey) as? Bool ?? feature.defaultIsPro
+        feature.defaultIsPro
     }
 
     func setPro(_ feature: Feature, _ value: Bool) {
