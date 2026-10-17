@@ -24,35 +24,36 @@ final class AudioControlStore: ObservableObject {
     private var outputTransportType: UInt32 = 0
 
     /// An output-specific symbol makes the picker easier to scan than a generic
-    /// AirPlay icon. Device names are the most portable signal across macOS outputs.
+    /// AirPlay icon. Transport metadata is preferred; the original name matcher
+    /// remains as a fallback for devices with incomplete metadata.
     var outputIcon: String {
         let name = outputName.lowercased()
-        if name.contains("airpods max") || name.contains("airpodsmax") {
-            return "airpodsmax"
-        }
-        if name.contains("airpods pro") || name.contains("airpodspro") {
-            return "airpodspro"
-        }
-        if name.contains("airpod") || name.contains("headphone") || name.contains("earbuds") ||
-            name.contains("headset") || name.contains("bluetooth") {
-            return "airpods"
-        }
-        if name.contains("hdmi") || name.contains("displayport") || name.contains("display port") {
-            return "tv"
-        }
-        if name.contains("macbook") || name.contains("built-in") || name.contains("internal") {
+        if name.contains("airpods max") || name.contains("airpodsmax") { return "airpodsmax" }
+        if name.contains("airpods pro") || name.contains("airpodspro") { return "airpodspro" }
+        if name.contains("airpod") { return "airpods" }
+        if name.contains("homepod") { return "homepod.fill" }
+
+        switch outputTransportType {
+        case kAudioDeviceTransportTypeBuiltIn:
             return "laptopcomputer"
+        case kAudioDeviceTransportTypeHDMI, kAudioDeviceTransportTypeDisplayPort:
+            return "tv"
+        case kAudioDeviceTransportTypeUSB:
+            return name.contains("speaker") ? "hifispeaker.fill" : "cable.connector"
+        case kAudioDeviceTransportTypeBluetooth, kAudioDeviceTransportTypeBluetoothLE:
+            return name.contains("speaker") || name.contains("soundbar") ? "hifispeaker.fill" : "headphones"
+        default:
+            return legacyOutputIcon(for: name)
         }
-        if name.contains("usb") {
-            return "cable.connector"
-        }
-        if name.contains("speaker") || name.contains("homepod") {
-            return "hifispeaker.fill"
-        }
-        if outputTransportType == kAudioDeviceTransportTypeBluetooth ||
-            outputTransportType == kAudioDeviceTransportTypeBluetoothLE {
-            return "airpods"
-        }
+    }
+
+    /// Original name-based matching retained as a fallback and extension point.
+    private func legacyOutputIcon(for name: String) -> String {
+        if name.contains("headphone") || name.contains("earbuds") || name.contains("headset") || name.contains("bluetooth") { return "headphones" }
+        if name.contains("hdmi") || name.contains("displayport") || name.contains("display port") { return "tv" }
+        if name.contains("macbook") || name.contains("built-in") || name.contains("internal") || name.contains("builtin") { return "laptopcomputer" }
+        if name.contains("usb") { return "cable.connector" }
+        if name.contains("speaker") || name.contains("external") || name.contains("loud") { return "hifispeaker.fill" }
         return "waveform"
     }
 
