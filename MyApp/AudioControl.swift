@@ -27,6 +27,12 @@ final class AudioControlStore: ObservableObject {
     /// AirPlay icon. Device names are the most portable signal across macOS outputs.
     var outputIcon: String {
         let name = outputName.lowercased()
+        if name.contains("airpods max") || name.contains("airpodsmax") {
+            return "airpodsmax"
+        }
+        if name.contains("airpods pro") || name.contains("airpodspro") {
+            return "airpodspro"
+        }
         if name.contains("airpod") || name.contains("headphone") || name.contains("earbuds") ||
             name.contains("headset") || name.contains("bluetooth") {
             return "airpods"
