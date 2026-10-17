@@ -22,6 +22,28 @@ final class AudioControlStore: ObservableObject {
     @Published private(set) var outputID: AudioDeviceID = 0
     @Published private(set) var outputs: [AudioOutputDevice] = []
 
+    /// An output-specific symbol makes the picker easier to scan than a generic
+    /// AirPlay icon. Device names are the most portable signal across macOS outputs.
+    var outputIcon: String {
+        let name = outputName.lowercased()
+        if name.contains("airpods") || name.contains("headphone") || name.contains("earbuds") {
+            return "airpods"
+        }
+        if name.contains("hdmi") || name.contains("displayport") || name.contains("display port") {
+            return "tv"
+        }
+        if name.contains("macbook") || name.contains("built-in") || name.contains("internal") {
+            return "laptopcomputer"
+        }
+        if name.contains("usb") {
+            return "cable.connector"
+        }
+        if name.contains("speaker") || name.contains("homepod") {
+            return "hifispeaker.fill"
+        }
+        return "waveform"
+    }
+
     private var volumeBeforeMute: Double = 0.5
     private var pollTask: Task<Void, Never>?
 
@@ -29,13 +51,11 @@ final class AudioControlStore: ObservableObject {
         refresh()
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
+                try? await Task.sleep(for: .seconds(2))
                 self?.refresh()
             }
         }
     }
-
-    deinit { pollTask?.cancel() }
 
     // MARK: - Reading
 
@@ -262,16 +282,13 @@ struct AudioControlBar: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 10) {
+        HStack(spacing: 10) {
             Button { audio.toggleMute() } label: {
                 Image(systemName: speakerSymbol)
                     .frame(width: 20)
             }
             .buttonStyle(.plain)
             .help(audio.isMuted ? "Unmute" : "Mute")
-            .accessibilityLabel(audio.isMuted ? "Unmute audio" : "Mute audio")
-            .keyboardShortcut("m", modifiers: [])
 
             Slider(value: Binding(
                 get: { audio.volume },
@@ -279,43 +296,27 @@ struct AudioControlBar: View {
             ), in: 0...1)
             .tint(.white)
             .disabled(!audio.canSetVolume)
-            .help(audio.canSetVolume ? "Volume" : "This output has no software volume control")
-            .accessibilityLabel("Volume")
-            .accessibilityValue(audio.canSetVolume ? "\(Int(audio.volume * 100)) percent" : "Unavailable")
+            .help(audio.canSetVolume ? "Volume" : "This output has no volume control. Use the device itself.")
 
             Menu {
-                if audio.outputs.isEmpty {
-                    Text("No output devices detected")
-                } else {
-                    ForEach(audio.outputs) { output in
-                        Button {
-                            audio.selectOutput(output)
-                        } label: {
-                            if output.id == audio.outputID {
-                                Label(output.name, systemImage: "checkmark")
-                            } else {
-                                Text(output.name)
-                            }
+                ForEach(audio.outputs) { output in
+                    Button {
+                        audio.selectOutput(output)
+                    } label: {
+                        if output.id == audio.outputID {
+                            Label(output.name, systemImage: "checkmark")
+                        } else {
+                            Text(output.name)
                         }
                     }
                 }
             } label: {
-                Image(systemName: "airplayaudio")
+                Image(systemName: audio.outputIcon)
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .frame(width: 24)
             .help("Output: \(audio.outputName)")
-            .accessibilityLabel("Audio output")
-            .accessibilityValue(audio.outputName)
-            }
-
-            if !audio.canSetVolume {
-                Text("Volume unavailable for this output")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.white.opacity(0.42))
-                    .lineLimit(1)
-            }
         }
         .font(.system(size: 13, weight: .medium))
         .foregroundStyle(Color.white.opacity(0.78))
