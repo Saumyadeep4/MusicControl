@@ -45,7 +45,6 @@ struct SettingsView: View {
         case features = "Features"
         case updates = "Updates"
         case about = "About"
-        case developer = "Developer"
 
         var id: String { rawValue }
 
@@ -57,7 +56,6 @@ struct SettingsView: View {
             case .features:  return "square.grid.2x2"
             case .updates:   return "arrow.down.circle"
             case .about:     return "info.circle"
-            case .developer: return "hammer"
             }
         }
     }
@@ -66,7 +64,7 @@ struct SettingsView: View {
     @ObservedObject private var updater = UpdateChecker.shared
 
     private var pages: [Page] {
-        Page.allCases.filter { $0 != .developer || FeatureAccess.developerToolsVisible }
+        Page.allCases.filter {_ in FeatureAccess.developerToolsVisible }
     }
 
     var body: some View {
@@ -135,7 +133,6 @@ struct SettingsView: View {
             case .features:  FeaturesPage()
             case .updates:   UpdatesPage()
             case .about:     AboutPage()
-            case .developer: DeveloperPage()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -469,36 +466,5 @@ private struct AboutPage: View {
             Spacer()
         }
         .padding(24)
-    }
-}
-
-// MARK: - Developer (hidden unless developer tools are on)
-
-private struct DeveloperPage: View {
-    @ObservedObject private var access = FeatureAccess.shared
-
-    var body: some View {
-        Form {
-            Section {
-                Toggle("Simulate Pro unlocked", isOn: $access.proUnlocked)
-            } header: {
-                Text("Licence (placeholder)")
-            } footer: {
-                Text("Stands in for the real licence check until licensing is built.")
-            }
-
-            Section {
-                ForEach(Feature.allCases) { feature in
-                    Toggle(feature.title, isOn: Binding(
-                        get: { access.isPro(feature) },
-                        set: { access.setPro(feature, $0) }
-                    ))
-                }
-                Button("Reset to the defaults in Features.swift") { access.resetProSwitches() }
-            } header: {
-                Text("Pro switches (on = 1 = behind the paywall)")
-            }
-        }
-        .formStyle(.grouped)
     }
 }
