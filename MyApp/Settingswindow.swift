@@ -41,6 +41,7 @@ struct SettingsView: View {
     enum Page: String, CaseIterable, Identifiable {
         case general = "General"
         case music = "Music"
+        case notch = "Notch"
         case features = "Features"
         case updates = "Updates"
         case about = "About"
@@ -52,6 +53,7 @@ struct SettingsView: View {
             switch self {
             case .general:   return "gearshape"
             case .music:     return "music.note"
+            case .notch:     return "rectangle.topthird.inset.filled"
             case .features:  return "square.grid.2x2"
             case .updates:   return "arrow.down.circle"
             case .about:     return "info.circle"
@@ -129,6 +131,7 @@ struct SettingsView: View {
             switch nav.page {
             case .general:   GeneralPage()
             case .music:     MusicPage()
+            case .notch:     NotchSettingsPage()
             case .features:  FeaturesPage()
             case .updates:   UpdatesPage()
             case .about:     AboutPage()
@@ -221,8 +224,53 @@ private struct MusicPage: View {
                 }
             }
 
+            Section("Shuffle and repeat") {
+                Text("Shuffle and repeat buttons work with Apple Music and Spotify. Spotify can only switch repeat on or off. Browsers and other apps don't offer these controls, so the buttons stay hidden for them.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Browsers and other apps") {
                 Text("Music and video from browsers, Podcasts, TV and other apps is controlled by the \"Browsers & other apps\" switch on the Features page. It needs no permission.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Notch
+
+private struct NotchSettingsPage: View {
+    @AppStorage("notchOpenWhenIdle") private var openWhenIdle = false
+    @AppStorage("notchOpenDelay") private var openDelay = 0.12
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Open the notch even when nothing is playing", isOn: $openWhenIdle)
+            } header: {
+                Text("When it opens")
+            } footer: {
+                Text("Off (recommended): the notch does nothing unless something is playing or paused. On: hovering the notch also opens other pages, such as Battery, when no music is loaded.")
+            }
+
+            Section {
+                Picker("Open speed", selection: $openDelay) {
+                    Text("Instant").tag(0.0)
+                    Text("Short").tag(0.12)
+                    Text("Relaxed").tag(0.35)
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Hover")
+            } footer: {
+                Text("How long the cursor must rest on the notch before it opens. A longer delay avoids opening by accident when you reach for menu bar items.")
+            }
+
+            Section("Pages") {
+                Text("Music appears while something is loaded. Battery and other pages are switched on or off on the Features page. When more than one page is available, small icons beside the notch let you switch.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

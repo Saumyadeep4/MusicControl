@@ -5,6 +5,8 @@ struct ContentView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var updater = UpdateChecker.shared
     @ObservedObject private var features = FeatureAccess.shared
+    @ObservedObject private var battery = BatteryStore.shared
+    @ObservedObject private var options = PlaybackOptionsStore.shared
 
     @State private var selectedPage: NotchPage = .music
 
@@ -12,13 +14,19 @@ struct ContentView: View {
     @State private var scrubValue: Double = 0
     @State private var hoveringBar = false
 
+    private var showsModes: Bool {
+        features.isActive(.shuffleRepeat) && options.isSupported
+    }
+
     var body: some View {
         let pages = availableNotchPages(player: player, includeIdleMusic: true)
+        let current = currentPage(in: pages)
+
         return VStack(spacing: 18) {
-            pageContent(currentPage(in: pages))
+            pageContent(current)
 
             if pages.count > 1 {
-                NotchPageSwitcher(pages: pages, current: currentPage(in: pages), accent: player.accent) {
+                NotchPageSwitcher(pages: pages, current: current, accent: player.accent) {
                     selectedPage = $0
                 }
             }
@@ -30,7 +38,9 @@ struct ContentView: View {
         .clipped()
         .environment(\.colorScheme, .dark)
         .onChange(of: pages) { _, newPages in
-            if !newPages.contains(selectedPage) { selectedPage = newPages.first ?? .music }
+            if !newPages.contains(selectedPage) {
+                selectedPage = newPages.first ?? .music
+            }
         }
     }
 
@@ -38,26 +48,30 @@ struct ContentView: View {
     private func pageContent(_ page: NotchPage) -> some View {
         switch page {
         case .music:
-            Group {
-                if player.hasTrack {
-                    VStack(spacing: 18) {
-                        artworkView
-                        titleBlock
-                        scrubber
-                        controls
+            if player.hasTrack {
+                VStack(spacing: 18) {
+                    artworkView
+                    titleBlock
+                    scrubber
+                    controls
+                    if features.isActive(.audioControl) {
                         AudioControlBar()
                     }
-                } else {
-                    emptyState
                 }
+            } else {
+                emptyState
             }
         case .battery:
             NotchBatteryPage()
+                .frame(maxWidth: .infinity, minHeight: 200)
         }
     }
 
     private func currentPage(in pages: [NotchPage]) -> NotchPage {
-        pages.contains(selectedPage) ? selectedPage : (pages.first ?? .music)
+        if pages.contains(selectedPage) {
+            return selectedPage
+        }
+        return pages.first ?? .music
     }
 
     // MARK: - Background
@@ -197,10 +211,15 @@ struct ContentView: View {
     // MARK: - Controls
 
     private var controls: some View {
-        HStack(spacing: 34) {
+        HStack(spacing: 24) {
+            if showsModes {
+                ShuffleButton(active: player.accent, inactive: Color.white.opacity(0.4))
+            }
+
             Button { player.previous() } label: {
                 Image(systemName: "backward.fill").font(.system(size: 22))
             }
+
             Button { player.playPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 26))
@@ -209,8 +228,13 @@ struct ContentView: View {
                     .background(Circle().fill(.white))
                     .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
             }
+
             Button { player.next() } label: {
                 Image(systemName: "forward.fill").font(.system(size: 22))
+            }
+
+            if showsModes {
+                RepeatButton(active: player.accent, inactive: Color.white.opacity(0.4))
             }
         }
         .buttonStyle(PressableStyle())
@@ -304,7 +328,7 @@ struct ContentView: View {
     }
 
     private func openSettings(page: SettingsView.Page? = nil) {
-        // A MenuBarExtra window otherwise remains above Settings and obscures it.
+        // A MenuBarExtra window can otherwise stay above Settings and hide it.
         dismiss()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             SettingsWindowController.shared.show(page: page)

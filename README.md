@@ -4,15 +4,73 @@
 
 MusicControl is a small, free Mac app that sits quietly at the top of your screen. Glance up to see the song, click to open a beautiful player, or hover over the notch for a quick mini player. No windows to juggle, no switching apps.
 
+## Screenshots
+
+### Free experience
+
+The free experience keeps the core player simple: see what is playing and control playback from the menu bar. The feature page shows which optional controls are available to unlock.
+
 <table>
   <tr>
     <td align="center" valign="top">
-      <img src="screenshots/music-control-popover.png" alt="Music Control menu bar player with audio controls" width="300"><br>
-      <sub><b>The menu bar player and audio controls</b></sub>
+      <img src="screenshots/free-menubar.png" alt="Music Control free menu bar player" width="300"><br>
+      <sub><b>Free menu bar player</b></sub>
     </td>
     <td align="center" valign="top">
-      <img src="screenshots/music-control-notch.png" alt="Music Control notch mini player" width="420"><br>
-      <sub><b>The notch mini player</b></sub>
+      <img src="screenshots/free-features.png" alt="Music Control free feature list with Pro unlock buttons" width="420"><br>
+      <sub><b>Free feature list</b></sub>
+    </td>
+  </tr>
+</table>
+
+### Pro experience
+
+The Pro player adds richer playback controls, audio output controls, battery information, browser and other-app media support, and the notch player.
+
+<table>
+  <tr>
+    <td align="center" valign="top">
+      <img src="screenshots/pro-menubar.png" alt="Music Control Pro menu bar player with playback and audio controls" width="300"><br>
+      <sub><b>Pro menu bar player</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="screenshots/pro-notch.png" alt="Music Control Pro notch player" width="420"><br>
+      <sub><b>Pro notch player</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="screenshots/pro-features.png" alt="Music Control Pro feature settings" width="420"><br>
+      <sub><b>Pro feature settings</b></sub>
+    </td>
+  </tr>
+</table>
+
+### Settings
+
+The settings window keeps startup, music permissions, notch behaviour, feature switches, update checks, and app information in one place.
+
+<table>
+  <tr>
+    <td align="center" valign="top">
+      <img src="screenshots/settings-general.png" alt="Music Control General settings" width="420"><br>
+      <sub><b>General</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="screenshots/settings-music.png" alt="Music Control Apple Music and Spotify settings" width="420"><br>
+      <sub><b>Music permissions</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="screenshots/settings-notch.png" alt="Music Control notch settings" width="420"><br>
+      <sub><b>Notch settings</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="screenshots/settings-updates.png" alt="Music Control update settings" width="420"><br>
+      <sub><b>Updates</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="screenshots/settings-about.png" alt="Music Control About screen" width="420"><br>
+      <sub><b>About</b></sub>
     </td>
   </tr>
 </table>

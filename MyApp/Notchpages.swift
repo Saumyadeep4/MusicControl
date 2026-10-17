@@ -5,7 +5,7 @@ import SwiftUI
 enum NotchPage: String, CaseIterable, Identifiable {
     case music
     case battery
-    // Add music-related pages here as they get built.
+    // Add new pages here (calendar, mirror, shelf...) as they get built.
 
     var id: String { rawValue }
 
@@ -38,7 +38,7 @@ func availableNotchPages(player: PlayerStore, includeIdleMusic: Bool = false) ->
     return pages
 }
 
-// MARK: - Page switcher (small icon row)
+// MARK: - Page switcher (small icon row, used in the popover)
 
 struct NotchPageSwitcher: View {
     let pages: [NotchPage]
@@ -72,13 +72,19 @@ struct NotchPageSwitcher: View {
     }
 }
 
-// MARK: - Music page (the player that was in the card before)
+// MARK: - Music page (the player inside the notch card)
 
 struct NotchMusicPage: View {
     @EnvironmentObject var player: PlayerStore
+    @ObservedObject private var features = FeatureAccess.shared
+    @ObservedObject private var options = PlaybackOptionsStore.shared
 
     @State private var scrubbing = false
     @State private var scrubProgress: CGFloat = 0
+
+    private var showsModes: Bool {
+        features.isActive(.shuffleRepeat) && options.isSupported
+    }
 
     var body: some View {
         Group {
@@ -176,8 +182,13 @@ struct NotchMusicPage: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 34) {
+        HStack(spacing: 26) {
+            if showsModes {
+                ShuffleButton(active: player.accent, inactive: Color.white.opacity(0.4))
+            }
+
             Button { player.previous() } label: { Image(systemName: "backward.fill") }
+
             Button { player.playPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 17, weight: .bold))
@@ -185,7 +196,12 @@ struct NotchMusicPage: View {
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(player.accent))
             }
+
             Button { player.next() } label: { Image(systemName: "forward.fill") }
+
+            if showsModes {
+                RepeatButton(active: player.accent, inactive: Color.white.opacity(0.4))
+            }
         }
         .buttonStyle(PressableStyle())
         .font(.title3)
@@ -243,6 +259,7 @@ struct NotchBatteryPage: View {
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
                         Text("\(battery.percent)%")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.white)
                         Text(battery.isCharging ? "CHARGING" : "BATTERY")
                             .font(.system(size: 9, weight: .bold))
                             .tracking(0.8)
@@ -256,14 +273,15 @@ struct NotchBatteryPage: View {
                 Spacer(minLength: 0)
                 Button { battery.refresh() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(Color.white.opacity(0.45))
                     .help("Refresh battery")
             }
 
             levelBar
 
             HStack {
-                Label(battery.onACPower ? "Power adapter connected" : "Running on battery", systemImage: battery.onACPower ? "powerplug.fill" : "laptopcomputer")
+                Label(battery.onACPower ? "Power adapter connected" : "Running on battery",
+                      systemImage: battery.onACPower ? "powerplug.fill" : "laptopcomputer")
                 Spacer()
                 if battery.lowPowerMode {
                     Label("Low Power", systemImage: "leaf.fill")
