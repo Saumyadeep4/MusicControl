@@ -9,6 +9,18 @@
 /* Begin PBXBuildFile section */
 		0A324739307A04F2008E8A6A /* MediaRemoteAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 0A324738307A04F2008E8A6A /* MediaRemoteAdapter */; };
 		0A32473A307A04F2008E8A6A /* MediaRemoteAdapter in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 0A324738307A04F2008E8A6A /* MediaRemoteAdapter */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		0AB4863F30831C5B00D52863 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AB4863230831C5B00D52863 /* Assets.xcassets */; };
+		0AB4864030831C5B00D52863 /* MyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863730831C5B00D52863 /* MyApp.swift */; };
+		0AB4864130831C5B00D52863 /* PlayerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863B30831C5B00D52863 /* PlayerStore.swift */; };
+		0AB4864230831C5B00D52863 /* Features.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863630831C5B00D52863 /* Features.swift */; };
+		0AB4864330831C5B00D52863 /* Playbackoptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863A30831C5B00D52863 /* Playbackoptions.swift */; };
+		0AB4864430831C5B00D52863 /* Settingswindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863C30831C5B00D52863 /* Settingswindow.swift */; };
+		0AB4864530831C5B00D52863 /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863430831C5B00D52863 /* Battery.swift */; };
+		0AB4864630831C5B00D52863 /* Notchpages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863930831C5B00D52863 /* Notchpages.swift */; };
+		0AB4864730831C5B00D52863 /* Updatechecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863D30831C5B00D52863 /* Updatechecker.swift */; };
+		0AB4864830831C5B00D52863 /* Notch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863830831C5B00D52863 /* Notch.swift */; };
+		0AB4864930831C5B00D52863 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863530831C5B00D52863 /* ContentView.swift */; };
+		0AB4864A30831C5B00D52863 /* AudioControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4863330831C5B00D52863 /* AudioControl.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,15 +37,19 @@
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* MusicControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0AB4863230831C5B00D52863 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0AB4863330831C5B00D52863 /* AudioControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioControl.swift; sourceTree = "<group>"; };
+		0AB4863430831C5B00D52863 /* Battery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Battery.swift; sourceTree = "<group>"; };
+		0AB4863530831C5B00D52863 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0AB4863630831C5B00D52863 /* Features.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features.swift; sourceTree = "<group>"; };
+		0AB4863730831C5B00D52863 /* MyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyApp.swift; sourceTree = "<group>"; };
+		0AB4863830831C5B00D52863 /* Notch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notch.swift; sourceTree = "<group>"; };
+		0AB4863930831C5B00D52863 /* Notchpages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notchpages.swift; sourceTree = "<group>"; };
+		0AB4863A30831C5B00D52863 /* Playbackoptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playbackoptions.swift; sourceTree = "<group>"; };
+		0AB4863B30831C5B00D52863 /* PlayerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStore.swift; sourceTree = "<group>"; };
+		0AB4863C30831C5B00D52863 /* Settingswindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settingswindow.swift; sourceTree = "<group>"; };
+		0AB4863D30831C5B00D52863 /* Updatechecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updatechecker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		000000000000000000000010 /* MyApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MyApp;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		000000000000000130000000 /* Frameworks */ = {
@@ -48,7 +64,7 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000010 /* MyApp */,
+				0AB4863E30831C5B00D52863 /* MusicControlApp */,
 				0A324737307A04F2008E8A6A /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
@@ -69,12 +85,31 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		0AB4863E30831C5B00D52863 /* MusicControlApp */ = {
+			isa = PBXGroup;
+			children = (
+				0AB4863230831C5B00D52863 /* Assets.xcassets */,
+				0AB4863330831C5B00D52863 /* AudioControl.swift */,
+				0AB4863430831C5B00D52863 /* Battery.swift */,
+				0AB4863530831C5B00D52863 /* ContentView.swift */,
+				0AB4863630831C5B00D52863 /* Features.swift */,
+				0AB4863730831C5B00D52863 /* MyApp.swift */,
+				0AB4863830831C5B00D52863 /* Notch.swift */,
+				0AB4863930831C5B00D52863 /* Notchpages.swift */,
+				0AB4863A30831C5B00D52863 /* Playbackoptions.swift */,
+				0AB4863B30831C5B00D52863 /* PlayerStore.swift */,
+				0AB4863C30831C5B00D52863 /* Settingswindow.swift */,
+				0AB4863D30831C5B00D52863 /* Updatechecker.swift */,
+			);
+			path = MusicControlApp;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		000000000000000100000000 /* Untitled Project */ = {
+		000000000000000100000000 /* MusicControl */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "Untitled Project" */;
+			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "MusicControl" */;
 			buildPhases = (
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
@@ -83,10 +118,7 @@
 			);
 			buildRules = (
 			);
-			fileSystemSynchronizedGroups = (
-				000000000000000000000010 /* MyApp */,
-			);
-			name = "Untitled Project";
+			name = MusicControl;
 			packageProductDependencies = (
 				0A324738307A04F2008E8A6A /* MediaRemoteAdapter */,
 			);
@@ -109,7 +141,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 000000000000000010000000 /* Build configuration list for PBXProject "Untitled Project" */;
+			buildConfigurationList = 000000000000000010000000 /* Build configuration list for PBXProject "MusicControl" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -126,7 +158,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				000000000000000100000000 /* Untitled Project */,
+				000000000000000100000000 /* MusicControl */,
 			);
 		};
 /* End PBXProject section */
@@ -135,6 +167,7 @@
 		000000000000000140000000 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				0AB4863F30831C5B00D52863 /* Assets.xcassets in Resources */,
 			);
 		};
 /* End PBXResourcesBuildPhase section */
@@ -143,12 +176,23 @@
 		000000000000000120000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				0AB4864030831C5B00D52863 /* MyApp.swift in Sources */,
+				0AB4864130831C5B00D52863 /* PlayerStore.swift in Sources */,
+				0AB4864230831C5B00D52863 /* Features.swift in Sources */,
+				0AB4864330831C5B00D52863 /* Playbackoptions.swift in Sources */,
+				0AB4864430831C5B00D52863 /* Settingswindow.swift in Sources */,
+				0AB4864530831C5B00D52863 /* Battery.swift in Sources */,
+				0AB4864630831C5B00D52863 /* Notchpages.swift in Sources */,
+				0AB4864730831C5B00D52863 /* Updatechecker.swift in Sources */,
+				0AB4864830831C5B00D52863 /* Notch.swift in Sources */,
+				0AB4864930831C5B00D52863 /* ContentView.swift in Sources */,
+				0AB4864A30831C5B00D52863 /* AudioControl.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		000000000000000011000000 /* Debug configuration for PBXProject "Untitled Project" */ = {
+		000000000000000011000000 /* Debug configuration for PBXProject "MusicControl" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -218,7 +262,7 @@
 			};
 			name = Debug;
 		};
-		000000000000000012000000 /* Release configuration for PBXProject "Untitled Project" */ = {
+		000000000000000012000000 /* Release configuration for PBXProject "MusicControl" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -280,7 +324,7 @@
 			};
 			name = Release;
 		};
-		000000000000000111000000 /* Debug configuration for PBXNativeTarget "Untitled Project" */ = {
+		000000000000000111000000 /* Debug configuration for PBXNativeTarget "MusicControl" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -337,7 +381,7 @@
 			};
 			name = Debug;
 		};
-		000000000000000112000000 /* Release configuration for PBXNativeTarget "Untitled Project" */ = {
+		000000000000000112000000 /* Release configuration for PBXNativeTarget "MusicControl" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -397,19 +441,19 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		000000000000000010000000 /* Build configuration list for PBXProject "Untitled Project" */ = {
+		000000000000000010000000 /* Build configuration list for PBXProject "MusicControl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				000000000000000011000000 /* Debug configuration for PBXProject "Untitled Project" */,
-				000000000000000012000000 /* Release configuration for PBXProject "Untitled Project" */,
+				000000000000000011000000 /* Debug configuration for PBXProject "MusicControl" */,
+				000000000000000012000000 /* Release configuration for PBXProject "MusicControl" */,
 			);
 			defaultConfigurationName = Release;
 		};
-		000000000000000110000000 /* Build configuration list for PBXNativeTarget "Untitled Project" */ = {
+		000000000000000110000000 /* Build configuration list for PBXNativeTarget "MusicControl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				000000000000000111000000 /* Debug configuration for PBXNativeTarget "Untitled Project" */,
-				000000000000000112000000 /* Release configuration for PBXNativeTarget "Untitled Project" */,
+				000000000000000111000000 /* Debug configuration for PBXNativeTarget "MusicControl" */,
+				000000000000000112000000 /* Release configuration for PBXNativeTarget "MusicControl" */,
 			);
 			defaultConfigurationName = Release;
 		};
