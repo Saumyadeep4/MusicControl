@@ -39,7 +39,7 @@ Apple Music and the Spotify desktop app have direct integrations for playback de
 
 ## Requirements
 
-- A Mac running a macOS version supported by the current release.
+- A Mac running a macOS Sonoma or newer
 - Apple Music, Spotify, or another app that reports media to macOS.
 - A MacBook with a notch to use the notch player. The menu bar player works on other Macs too.
 
