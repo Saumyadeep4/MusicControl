@@ -1,6 +1,8 @@
 import SwiftUI
 import AppKit
 import Combine
+import os
+import os
 
 enum RepeatSetting: String {
     case off
@@ -143,7 +145,7 @@ final class PlaybackOptionsStore: ObservableObject {
     private func run(_ source: String) -> NSAppleEventDescriptor? {
         var error: NSDictionary?
         let result = NSAppleScript(source: source)?.executeAndReturnError(&error)
-        if let error { print("AppleScript error:", error) }
+        if let error { AppLog.script.error("AppleScript error: \(String(describing: error), privacy: .public)") }
         return result
     }
 }
@@ -163,6 +165,7 @@ struct ShuffleButton: View {
                 .frame(width: 26, height: 26)
         }
         .help(options.shuffleOn ? "Shuffle: on" : "Shuffle: off")
+        .accessibilityLabel(options.shuffleOn ? "Shuffle on" : "Shuffle off")
     }
 }
 
@@ -191,5 +194,6 @@ struct RepeatButton: View {
                 .frame(width: 26, height: 26)
         }
         .help(helpText)
+        .accessibilityLabel(helpText)
     }
 }

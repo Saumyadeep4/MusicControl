@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var scrubbing = false
     @State private var scrubValue: Double = 0
     @State private var hoveringBar = false
+    @State private var showingLyrics = false
 
     private var showsModes: Bool {
         features.isActive(.shuffleRepeat) && options.isSupported
@@ -37,6 +38,21 @@ struct ContentView: View {
         .background { backdrop }
         .clipped()
         .environment(\.colorScheme, .dark)
+        // Keyboard: Space plays or pauses, the arrow keys skip
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(.space) {
+            player.playPause()
+            return .handled
+        }
+        .onKeyPress(.leftArrow) {
+            player.previous()
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            player.next()
+            return .handled
+        }
         .onChange(of: pages) { _, newPages in
             if !newPages.contains(selectedPage) {
                 selectedPage = newPages.first ?? .music
@@ -114,11 +130,18 @@ struct ContentView: View {
                 }
             }
         }
+        .id("\(player.title)|\(player.artist)")
+        .transition(.opacity)
         .frame(width: 240, height: 240)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: .black.opacity(0.4), radius: 20, y: 10)
         .scaleEffect(player.isPlaying ? 1 : 0.92)
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: player.isPlaying)
+        .animation(.easeInOut(duration: 0.3), value: player.title)
+        .onTapGesture { openSourceApp() }
+        .help(player.source.appName.isEmpty ? "" : "Open \(player.source.appName)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("Album artwork")
     }
 
     // MARK: - Title
@@ -129,26 +152,33 @@ struct ContentView: View {
 
     private var titleBlock: some View {
         VStack(spacing: 4) {
-            Text(player.title)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-                .lineLimit(1)
-            Text(player.artist)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.75))
-                .lineLimit(1)
+            MarqueeText(text: player.title,
+                        font: .system(size: 19, weight: .bold, design: .rounded),
+                        color: Color.white,
+                        alignment: .center)
+            MarqueeText(text: player.artist,
+                        font: .system(size: 14, weight: .medium),
+                        color: Color.white.opacity(0.75),
+                        alignment: .center)
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.45))
                     .lineLimit(1)
             }
-            Text(player.sourceLabel.uppercased())
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(1)
-                .foregroundStyle(.white.opacity(0.35))
-                .padding(.top, 2)
+            HStack(spacing: 6) {
+                Text(player.sourceLabel.uppercased())
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(1)
+                    .foregroundStyle(.white.opacity(0.35))
+                EqualizerBars(isPlaying: player.isPlaying, color: player.accent.opacity(0.7), height: 9)
+            }
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity)
+        .contextMenu {
+            Button("Copy song and artist") { copySongInfo() }
+        }
     }
 
     // MARK: - Scrub bar
@@ -197,6 +227,16 @@ struct ContentView: View {
             }
             .frame(height: 20)
             .onHover { hoveringBar = $0 }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Playback position")
+            .accessibilityValue("\(format(player.position)) of \(format(player.duration))")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: player.seek(to: player.position + 10)
+                case .decrement: player.seek(to: player.position - 10)
+                @unknown default: break
+                }
+            }
 
             HStack {
                 Text(format(scrubbing ? scrubValue : player.position))
@@ -219,6 +259,7 @@ struct ContentView: View {
             Button { player.previous() } label: {
                 Image(systemName: "backward.fill").font(.system(size: 22))
             }
+            .accessibilityLabel("Previous track")
 
             Button { player.playPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -228,10 +269,12 @@ struct ContentView: View {
                     .background(Circle().fill(.white))
                     .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
             }
+            .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
 
             Button { player.next() } label: {
                 Image(systemName: "forward.fill").font(.system(size: 22))
             }
+            .accessibilityLabel("Next track")
 
             if showsModes {
                 RepeatButton(active: player.accent, inactive: Color.white.opacity(0.4))
@@ -242,8 +285,14 @@ struct ContentView: View {
 
     // MARK: - Empty state
 
+    /// True when macOS has refused (or is still waiting on) permission for Music or Spotify
+    private var needsPermissionHelp: Bool {
+        let status = player.permissionStatus
+        return status.contains("denied") || status.contains("waiting") || player.lastError.contains("-1743")
+    }
+
     private var emptyState: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 46))
                 .foregroundStyle(.white.opacity(0.5))
@@ -254,6 +303,53 @@ struct ContentView: View {
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
 
+            if needsPermissionHelp {
+                permissionHelpCard
+            } else {
+                VStack(spacing: 6) {
+                    Button("Having trouble?") { openSettings(page: .music) }
+                        .buttonStyle(.link)
+                        .font(.system(size: 10))
+                    if !player.lastError.isEmpty {
+                        Text(player.lastError)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.red.opacity(0.85))
+                            .multilineTextAlignment(.center)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: 230)
+    }
+
+    private var permissionHelpCard: some View {
+        VStack(spacing: 8) {
+            Label("MusicControl needs permission", systemImage: "exclamationmark.triangle.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.yellow)
+            Text("macOS blocked access to your music app. Click Allow access and choose OK, or switch MusicControl on under Automation in System Settings.")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+            HStack(spacing: 8) {
+                Button("Allow access") { player.requestPermissions() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                Button("Open settings") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .controlSize(.small)
+            }
+            if !player.permissionStatus.isEmpty {
+                Text(player.permissionStatus)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+            }
             if !player.lastError.isEmpty {
                 Text(player.lastError)
                     .font(.system(size: 10))
@@ -261,28 +357,9 @@ struct ContentView: View {
                     .multilineTextAlignment(.center)
                     .textSelection(.enabled)
             }
-
-            Button("Allow access to Music & Spotify") { player.requestPermissions() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-
-            if !player.permissionStatus.isEmpty {
-                Text(player.permissionStatus)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-            }
-
-            Button("Open Automation settings") {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-            .buttonStyle(.link)
-            .font(.system(size: 10))
         }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 230)
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.08)))
     }
 
     // MARK: - Footer
@@ -294,6 +371,27 @@ struct ContentView: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             .help("Settings")
+            .accessibilityLabel("Settings")
+
+            if features.isActive(.sleepTimer) && player.hasTrack {
+                SleepTimerButton()
+            }
+
+            if player.hasTrack {
+                Button { player.toggleFavorite() } label: {
+                    Image(systemName: "heart")
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .help(player.source == .appleMusic ? "Favorite in Apple Music" : "Favorites are available in Apple Music only")
+                .accessibilityLabel("Favorite current track")
+
+                Button { showingLyrics = true } label: {
+                    Image(systemName: "text.quote")
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .help("Lyrics")
+                .accessibilityLabel("Show lyrics")
+            }
 
             Spacer()
 
@@ -317,9 +415,13 @@ struct ContentView: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             .help("Quit")
+            .accessibilityLabel("Quit MusicControl")
         }
         .font(.system(size: 14))
         .buttonStyle(PressableStyle())
+        .sheet(isPresented: $showingLyrics) {
+            LyricsSheet(title: player.title, artist: player.artist, lyrics: player.lyrics, isLoading: player.lyricsLoading, position: player.position)
+        }
     }
 
     private func format(_ seconds: Double) -> String {
@@ -327,11 +429,101 @@ struct ContentView: View {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
+    /// Click the artwork to bring the music app to the front (Music and Spotify)
+    private func openSourceApp() {
+        let id = player.source.bundleID
+        guard !id.isEmpty,
+              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else { return }
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    private func copySongInfo() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("\(player.title) - \(player.artist)", forType: .string)
+    }
+
     private func openSettings(page: SettingsView.Page? = nil) {
         // A MenuBarExtra window can otherwise stay above Settings and hide it.
         dismiss()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             SettingsWindowController.shared.show(page: page)
+        }
+    }
+}
+
+private struct LyricsSheet: View {
+    let title: String
+    let artist: String
+    let lyrics: String
+    let isLoading: Bool
+    let position: Double
+    @Environment(\.dismiss) private var dismiss
+
+    private struct Line: Identifiable {
+        let id = UUID()
+        let time: Double?
+        let text: String
+    }
+
+    private var lines: [Line] {
+        lyrics.split(separator: "\n", omittingEmptySubsequences: false).map { raw in
+            let value = String(raw)
+            let pattern = #"^\[(\d{2}):(\d{2}(?:\.\d{2})?)\]"#
+            guard let match = try? NSRegularExpression(pattern: pattern).firstMatch(in: value, range: NSRange(value.startIndex..., in: value)),
+                  let minutesRange = Range(match.range(at: 1), in: value),
+                  let secondsRange = Range(match.range(at: 2), in: value) else {
+                return Line(time: nil, text: value.trimmingCharacters(in: .whitespaces))
+            }
+            let time = (Double(value[minutesRange]) ?? 0) * 60 + (Double(value[secondsRange]) ?? 0)
+            let text = String(value[Range(match.range, in: value)!.upperBound...]).trimmingCharacters(in: .whitespaces)
+            return Line(time: time, text: text)
+        }.filter { !$0.text.isEmpty }
+    }
+
+    private var currentLineIndex: Int? {
+        lines.lastIndex { ($0.time ?? .infinity) <= position }
+    }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.headline)
+                    Text(artist).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Done") { dismiss() }
+            }
+            if isLoading {
+                ProgressView("Finding lyrics…").frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if lyrics.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                ContentUnavailableView("Lyrics unavailable", systemImage: "text.quote",
+                                       description: Text("No lyrics were found for this track."))
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 14) {
+                            ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                                Text(line.text)
+                                    .font(.system(size: 19, weight: index == currentLineIndex ? .bold : .medium, design: .rounded))
+                                    .foregroundStyle(index == currentLineIndex ? Color.white : Color.white.opacity(0.35))
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                                    .id(index)
+                            }
+                        }.padding(.horizontal, 20).padding(.vertical, 110)
+                    }
+                    .onChange(of: currentLineIndex) { _, index in
+                        if let index { withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo(index, anchor: .center) } }
+                    }
+                }
+                .mask(LinearGradient(colors: [.clear, .black, .black, .clear], startPoint: .top, endPoint: .bottom))
+            }
+        }
+        .padding(20)
+        .frame(width: 420, height: 520)
+        .background {
+            LinearGradient(colors: [Color.indigo.opacity(0.24), Color.black.opacity(0.95)], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 }

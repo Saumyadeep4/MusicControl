@@ -59,6 +59,7 @@ struct NotchPageSwitcher: View {
                 }
                 .buttonStyle(.plain)
                 .help(page.title)
+                .accessibilityLabel(page.title)
             }
         }
         .frame(height: 26)
@@ -101,20 +102,19 @@ struct NotchMusicPage: View {
             HStack(spacing: 12) {
                 artwork(size: 60, radius: 10)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(player.title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    Text(player.artist)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .lineLimit(1)
+                    MarqueeText(text: player.title,
+                                font: .system(size: 15, weight: .semibold),
+                                color: Color.white)
+                    MarqueeText(text: player.artist,
+                                font: .system(size: 13),
+                                color: Color.white.opacity(0.7))
                     Text(player.album)
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
                 }
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                EqualizerBars(isPlaying: player.isPlaying, color: player.accent, height: 14)
             }
 
             progressBar
@@ -170,6 +170,16 @@ struct NotchMusicPage: View {
                 )
             }
             .frame(height: 16)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Playback position")
+            .accessibilityValue("\(format(player.position)) of \(format(player.duration))")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: player.seek(to: player.position + 10)
+                case .decrement: player.seek(to: player.position - 10)
+                @unknown default: break
+                }
+            }
 
             HStack {
                 Text(format(scrubbing ? Double(scrubProgress) * player.duration : player.position))
@@ -188,6 +198,7 @@ struct NotchMusicPage: View {
             }
 
             Button { player.previous() } label: { Image(systemName: "backward.fill") }
+                .accessibilityLabel("Previous track")
 
             Button { player.playPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -196,8 +207,10 @@ struct NotchMusicPage: View {
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(player.accent))
             }
+            .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
 
             Button { player.next() } label: { Image(systemName: "forward.fill") }
+                .accessibilityLabel("Next track")
 
             if showsModes {
                 RepeatButton(active: player.accent, inactive: Color.white.opacity(0.4))
@@ -275,6 +288,7 @@ struct NotchBatteryPage: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.white.opacity(0.45))
                     .help("Refresh battery")
+                    .accessibilityLabel("Refresh battery")
             }
 
             levelBar
