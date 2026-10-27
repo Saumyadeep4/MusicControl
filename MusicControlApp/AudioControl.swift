@@ -28,10 +28,12 @@ final class AudioControlStore: ObservableObject {
     /// remains as a fallback for devices with incomplete metadata.
     var outputIcon: String {
         let name = outputName.lowercased()
-        if name.contains("airpods max") || name.contains("airpodsmax") || name.contains("max") { return "airpodsmax" }
-        if name.contains("airpods pro") || name.contains("airpodspro") || name.contains("pro") || name.contains("anti-noise machine") { return "airpodspro" }
-        if name.contains("airpod") || name.contains("pods") { return "airpods" }
-        if name.contains("homepod") || name.contains("pod") { return "homepod.fill" }
+        // Match whole product names only. Short fragments such as "pro" or "max" also appear in
+        // names like "MacBook Pro Speakers", which would show the wrong icon.
+        if name.contains("airpods max") || name.contains("airpodsmax") { return "airpodsmax" }
+        if name.contains("airpods pro") || name.contains("airpodspro") { return "airpodspro" }
+        if name.contains("airpod") { return "airpods" }
+        if name.contains("homepod") { return "homepod.fill" }
 
         switch outputTransportType {
         case kAudioDeviceTransportTypeBuiltIn:
@@ -64,7 +66,9 @@ final class AudioControlStore: ObservableObject {
         refresh()
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
+                // Look often while music is loaded, and rarely otherwise
+                let delay: Double = PlayerStore.shared.hasTrack ? 2 : 8
+                try? await Task.sleep(for: .seconds(delay))
                 self?.refresh()
             }
         }
@@ -156,6 +160,14 @@ final class AudioControlStore: ObservableObject {
             UInt32(MemoryLayout<AudioDeviceID>.size), &id
         )
         if status == noErr { refresh() }
+    }
+
+    /// Used by the Apple Music automation rule. Device names survive reconnects
+    /// more reliably than Core Audio device IDs.
+    func selectOutput(named name: String) {
+        refresh()
+        guard let device = outputs.first(where: { $0.name == name }) else { return }
+        selectOutput(device)
     }
 
     // MARK: - Devices
@@ -315,6 +327,7 @@ struct AudioControlBar: View {
             }
             .buttonStyle(.plain)
             .help(audio.isMuted ? "Unmute" : "Mute")
+            .accessibilityLabel(audio.isMuted ? "Unmute" : "Mute")
 
             Slider(value: Binding(
                 get: { audio.volume },
@@ -323,6 +336,7 @@ struct AudioControlBar: View {
             .tint(.white)
             .disabled(!audio.canSetVolume)
             .help(audio.canSetVolume ? "Volume" : "This output has no volume control. Use the device itself.")
+            .accessibilityLabel("Volume")
 
             Menu {
                 ForEach(audio.outputs) { output in
@@ -343,6 +357,7 @@ struct AudioControlBar: View {
             .menuIndicator(.hidden)
             .frame(width: 24)
             .help("Output: \(audio.outputName)")
+            .accessibilityLabel("Audio output, \(audio.outputName)")
         }
         .font(.system(size: 13, weight: .medium))
         .foregroundStyle(Color.white.opacity(0.78))

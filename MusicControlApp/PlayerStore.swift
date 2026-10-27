@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import Combine
 import ApplicationServices
+import os
 import MediaRemoteAdapter
 
 enum MusicSource: String {
@@ -40,6 +41,19 @@ struct TrackSnapshot {
     var position: Double
 }
 
+struct PlaybackHistoryEntry: Codable, Identifiable, Equatable {
+    let id: UUID
+    let title: String
+    let artist: String
+    let album: String
+    let playedAt: Date
+}
+
+private struct LyricsResponse: Decodable {
+    let plainLyrics: String?
+    let syncedLyrics: String?
+}
+
 /// What the system-wide "Now Playing" feed reports (any app, including browsers)
 struct SystemMedia: @unchecked Sendable {
     var snapshot: TrackSnapshot
@@ -70,12 +84,16 @@ final class PlayerStore: ObservableObject {
     @Published var sourceLabel = "Apple Music"
     @Published var lastError = ""
     @Published var permissionStatus = ""
+    @Published private(set) var lyrics = ""
+    @Published private(set) var lyricsLoading = false
+    @Published private(set) var history: [PlaybackHistoryEntry] = []
 
     var isScrubbing = false
 
     private var task: Task<Void, Never>?
     private var artworkTask: Task<Void, Never>?
     private var lastTrackKey = ""
+    private let historyKey = "playbackHistory"
 
     // System-wide Now Playing
     private let mediaController = MediaController()
@@ -86,12 +104,20 @@ final class PlayerStore: ObservableObject {
         FeatureAccess.shared.isActive(.browserMedia)
     }
 
+    /// Check often while music plays and a little less when idle, which saves energy
+    private var pollInterval: Double {
+        if hasTrack && isPlaying { return 1 }
+        return 2
+    }
+
     init() {
+        loadHistory()
         refresh()
         startSystemListener()
         task = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
+                let delay = self?.pollInterval ?? 1
+                try? await Task.sleep(for: .seconds(delay))
                 self?.refresh()
             }
         }
@@ -244,12 +270,76 @@ final class PlayerStore: ObservableObject {
         hasTrack = true
         lastError = ""
 
+        applyAppleMusicAutomationIfNeeded(source: s)
+
         // Only reload artwork when the song (or the app) changes
         let key = "\(label)|\(t.title)|\(t.artist)|\(t.album)"
         if key != lastTrackKey {
             lastTrackKey = key
+            recordHistory(t)
+            loadLyrics(for: s)
             loadArtwork(for: s, key: key)
         }
+    }
+
+    private func loadLyrics(for source: MusicSource) {
+        lyrics = ""
+        lyricsLoading = true
+        let trackTitle = title, trackArtist = artist, trackAlbum = album, trackDuration = duration
+        Task { [weak self] in
+            guard var components = URLComponents(string: "https://lrclib.net/api/get") else { return }
+            components.queryItems = [URLQueryItem(name: "track_name", value: trackTitle), URLQueryItem(name: "artist_name", value: trackArtist), URLQueryItem(name: "album_name", value: trackAlbum), URLQueryItem(name: "duration", value: String(Int(trackDuration.rounded())))]
+            var request = URLRequest(url: components.url!)
+            request.setValue("MusicControl/1.0", forHTTPHeaderField: "User-Agent")
+            let response = try? await URLSession.shared.data(for: request)
+            guard let self, self.title == trackTitle, self.artist == trackArtist else { return }
+            self.lyricsLoading = false
+            guard let data = response?.0, let result = try? JSONDecoder().decode(LyricsResponse.self, from: data) else { return }
+            self.lyrics = result.syncedLyrics ?? result.plainLyrics ?? ""
+        }
+    }
+
+    private func applyAppleMusicAutomationIfNeeded(source: MusicSource) {
+        guard source == .appleMusic,
+              UserDefaults.standard.bool(forKey: "appleMusicAudioRuleEnabled") else { return }
+        let audio = AudioControlStore.shared
+        let defaults = UserDefaults.standard
+        let name = defaults.string(forKey: "appleMusicOutputName") ?? ""
+        if !name.isEmpty { audio.selectOutput(named: name) }
+        if let value = defaults.object(forKey: "appleMusicVolume") as? Double {
+            audio.setVolume(value)
+        }
+    }
+
+    private func loadHistory() {
+        history = (try? JSONDecoder().decode([PlaybackHistoryEntry].self,
+                                             from: UserDefaults.standard.data(forKey: historyKey) ?? Data())) ?? []
+    }
+
+    private func recordHistory(_ track: TrackSnapshot) {
+        let entry = PlaybackHistoryEntry(id: UUID(), title: track.title, artist: track.artist,
+                                         album: track.album, playedAt: Date())
+        history.insert(entry, at: 0)
+        history = Array(history.prefix(50))
+        UserDefaults.standard.set(try? JSONEncoder().encode(history), forKey: historyKey)
+    }
+
+    func clearHistory() {
+        history = []
+        UserDefaults.standard.removeObject(forKey: historyKey)
+    }
+
+    func toggleFavorite() {
+        guard source == .appleMusic else {
+            lastError = "Favorites are available for Apple Music only."
+            return
+        }
+        _ = run("""
+        tell application "Music"
+            set currentFavorite to favorited of current track
+            set favorited of current track to not currentFavorite
+        end tell
+        """)
     }
 
     // MARK: - Reading a track (AppleScript apps)
@@ -497,7 +587,7 @@ final class PlayerStore: ObservableObject {
         var error: NSDictionary?
         let result = NSAppleScript(source: source)?.executeAndReturnError(&error)
         if let error {
-            print("AppleScript error:", error)
+            AppLog.script.error("AppleScript error: \(String(describing: error), privacy: .public)")
             let number = (error.object(forKey: "NSAppleScriptErrorNumber") as? Int) ?? 0
             let message = (error.object(forKey: "NSAppleScriptErrorMessage") as? String) ?? "unknown"
             lastError = "Error \(number): \(message)"

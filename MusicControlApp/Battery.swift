@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import IOKit.ps
+import UserNotifications
 
 /// Reads the Mac's battery (level, charging, time left). Needs no permission.
 /// On a Mac without a battery (for example a Mac mini) `hasBattery` stays false.
@@ -17,6 +18,7 @@ final class BatteryStore: ObservableObject {
     @Published var lowPowerMode = false
 
     private var pollTask: Task<Void, Never>?
+    private var didAlertAtCurrentLowLevel = false
 
     private init() {
         refresh()
@@ -61,6 +63,7 @@ final class BatteryStore: ObservableObject {
             isFullyCharged = details[kIOPSIsChargedKey] as? Bool ?? false
             let powerState = details[kIOPSPowerSourceStateKey] as? String
             onACPower = powerState == kIOPSACPowerValue
+            sendLowBatteryAlertIfNeeded()
 
             var minutes: Int?
             if isCharging {
@@ -79,6 +82,26 @@ final class BatteryStore: ObservableObject {
         }
 
         hasBattery = false
+    }
+
+    private func sendLowBatteryAlertIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: "batteryAlertEnabled") else { return }
+        let threshold = defaults.object(forKey: "batteryAlertThreshold") as? Int ?? 20
+        guard percent <= threshold, !isCharging else {
+            didAlertAtCurrentLowLevel = false
+            return
+        }
+        guard !didAlertAtCurrentLowLevel else { return }
+        didAlertAtCurrentLowLevel = true
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "Battery at \(self.percent)%"
+            content.body = "Your Mac is running on battery."
+            content.sound = .default
+            UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "low-battery", content: content, trigger: nil))
+        }
     }
 
     // MARK: - Text and colours for the views

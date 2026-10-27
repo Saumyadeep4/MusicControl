@@ -41,6 +41,7 @@ struct SettingsView: View {
     enum Page: String, CaseIterable, Identifiable {
         case general = "General"
         case music = "Music"
+        case library = "Library"
         case notch = "Notch"
         case features = "Features"
         case updates = "Updates"
@@ -52,6 +53,7 @@ struct SettingsView: View {
             switch self {
             case .general:   return "gearshape"
             case .music:     return "music.note"
+            case .library:   return "clock.arrow.circlepath"
             case .notch:     return "rectangle.topthird.inset.filled"
             case .features:  return "square.grid.2x2"
             case .updates:   return "arrow.down.circle"
@@ -64,7 +66,7 @@ struct SettingsView: View {
     @ObservedObject private var updater = UpdateChecker.shared
 
     private var pages: [Page] {
-        Page.allCases.filter {_ in FeatureAccess.developerToolsVisible }
+        Page.allCases
     }
 
     var body: some View {
@@ -129,6 +131,7 @@ struct SettingsView: View {
             switch nav.page {
             case .general:   GeneralPage()
             case .music:     MusicPage()
+            case .library:   LibraryPage()
             case .notch:     NotchSettingsPage()
             case .features:  FeaturesPage()
             case .updates:   UpdatesPage()
@@ -144,6 +147,10 @@ struct SettingsView: View {
 private struct GeneralPage: View {
     @AppStorage("showArtInMenuBar") private var showArt = true
     @AppStorage("showSongInMenuBar") private var showSong = true
+    @AppStorage("menuBarTextStyle") private var textStyle = 0
+    @AppStorage("menuBarMaxChars") private var maxChars = 28
+    @AppStorage("batteryAlertEnabled") private var batteryAlertEnabled = false
+    @AppStorage("batteryAlertThreshold") private var batteryAlertThreshold = 20
 
     var body: some View {
         Form {
@@ -153,13 +160,41 @@ private struct GeneralPage: View {
             Section("Menu bar") {
                 Toggle("Show the album cover", isOn: $showArt)
                 Toggle("Show the song name", isOn: $showSong)
+                Picker("Text shown", selection: $textStyle) {
+                    Text("Song - Artist").tag(0)
+                    Text("Song only").tag(1)
+                    Text("Artist - Song").tag(2)
+                }
+                .disabled(!showSong)
+                HStack {
+                    Text("Maximum length")
+                    Slider(value: Binding(
+                        get: { Double(maxChars) },
+                        set: { maxChars = Int($0) }
+                    ), in: 12...40, step: 1)
+                    Text("\(maxChars)")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, alignment: .trailing)
+                }
+                .disabled(!showSong)
+            }
+            Section("Battery alerts") {
+                Toggle("Notify me when battery is low", isOn: $batteryAlertEnabled)
+                if batteryAlertEnabled {
+                    Picker("Alert at", selection: $batteryAlertThreshold) {
+                        Text("10%").tag(10)
+                        Text("20%").tag(20)
+                        Text("30%").tag(30)
+                    }
+                }
             }
         }
         .formStyle(.grouped)
     }
 }
 
-private struct LaunchAtLoginToggle: View {
+struct LaunchAtLoginToggle: View {
     @State private var enabled = SMAppService.mainApp.status == .enabled
     @State private var message = ""
 
@@ -197,6 +232,10 @@ private struct LaunchAtLoginToggle: View {
 
 private struct MusicPage: View {
     @ObservedObject private var player = PlayerStore.shared
+    @ObservedObject private var audio = AudioControlStore.shared
+    @AppStorage("appleMusicAudioRuleEnabled") private var audioRuleEnabled = false
+    @AppStorage("appleMusicOutputName") private var outputName = ""
+    @AppStorage("appleMusicVolume") private var volume = 0.5
 
     var body: some View {
         Form {
@@ -232,6 +271,55 @@ private struct MusicPage: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+
+            Section {
+                Toggle("Apply my audio preference when Music starts", isOn: $audioRuleEnabled)
+                if audioRuleEnabled {
+                    Picker("Output", selection: $outputName) {
+                        Text("Keep current output").tag("")
+                        ForEach(audio.outputs) { output in
+                            Text(output.name).tag(output.name)
+                        }
+                    }
+                    Slider(value: $volume, in: 0...1) { Text("Volume") }
+                }
+            } header: {
+                Text("Apple Music automation")
+            } footer: {
+                Text("This rule is applied only when Apple Music becomes the active player. It does not alter Spotify or browser media.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Library
+
+private struct LibraryPage: View {
+    @ObservedObject private var player = PlayerStore.shared
+
+    var body: some View {
+        Form {
+            Section("Playback history") {
+                if player.history.isEmpty {
+                    Text("Tracks you play will appear here. History stays on this Mac.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(player.history.prefix(12)) { track in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(track.title).font(.headline)
+                            Text([track.artist, track.album].filter { !$0.isEmpty }.joined(separator: " · "))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Button("Clear history", role: .destructive) { player.clearHistory() }
+                }
+            }
+
+            Section("Apple Music") {
+                Text("Use the heart in the player to favorite the current track. Queue controls are only dependable in Apple Music; Spotify and other media sources show a limitation note.")
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
     }
@@ -242,6 +330,8 @@ private struct MusicPage: View {
 private struct NotchSettingsPage: View {
     @AppStorage("notchOpenWhenIdle") private var openWhenIdle = false
     @AppStorage("notchOpenDelay") private var openDelay = 0.12
+    @AppStorage("notchTrackPopup") private var trackPopup = false
+    @AppStorage("notchHaptics") private var haptics = true
 
     var body: some View {
         Form {
@@ -266,6 +356,15 @@ private struct NotchSettingsPage: View {
                 Text("How long the cursor must rest on the notch before it opens. A longer delay avoids opening by accident when you reach for menu bar items.")
             }
 
+            Section {
+                Toggle("Show the song briefly when it changes", isOn: $trackPopup)
+                Toggle("Haptic tap when the notch opens", isOn: $haptics)
+            } header: {
+                Text("Extras")
+            } footer: {
+                Text("The song pop-up appears under the notch for a few seconds when a new song starts. The haptic tap is felt on a MacBook trackpad.")
+            }
+
             Section("Pages") {
                 Text("Music appears while something is loaded. Battery and other pages are switched on or off on the Features page. When more than one page is available, small icons beside the notch let you switch.")
                     .font(.callout)
@@ -276,22 +375,10 @@ private struct NotchSettingsPage: View {
     }
 }
 
-// MARK: - Features (with the PRO badge)
-
-struct ProBadge: View {
-    var body: some View {
-        Text("PRO")
-            .font(.system(size: 9, weight: .bold))
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(Capsule().fill(Color.orange))
-            .foregroundStyle(.white)
-    }
-}
+// MARK: - Features
 
 private struct FeaturesPage: View {
     @ObservedObject private var access = FeatureAccess.shared
-    @State private var showUpgradeNotice = false
 
     var body: some View {
         Form {
@@ -300,32 +387,21 @@ private struct FeaturesPage: View {
                     row(feature)
                 }
             } footer: {
-                Text("Switch features on or off. Features marked PRO are part of the paid plan.")
+                Text("Switch features on or off.")
             }
         }
         .formStyle(.grouped)
-        .alert("Pro isn't available yet", isPresented: $showUpgradeNotice) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Licensing hasn't been set up in this version.")
-        }
     }
 
     @ViewBuilder
     private func row(_ feature: Feature) -> some View {
-        let pro = access.isPro(feature)
-        let locked = access.isLocked(feature)
-
         HStack(spacing: 12) {
             Image(systemName: feature.systemImage)
                 .font(.title3)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(feature.title).font(.headline)
-                    if pro { ProBadge() }
-                }
+                Text(feature.title).font(.headline)
                 Text(feature.detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -333,16 +409,12 @@ private struct FeaturesPage: View {
 
             Spacer()
 
-            if locked {
-                Button("Unlock") { showUpgradeNotice = true }
-            } else {
-                Toggle("", isOn: Binding(
-                    get: { access.isEnabled(feature) },
-                    set: { access.setEnabled(feature, $0) }
-                ))
-                .labelsHidden()
-                .toggleStyle(.switch)
-            }
+            Toggle("", isOn: Binding(
+                get: { access.isEnabled(feature) },
+                set: { access.setEnabled(feature, $0) }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
         }
         .padding(.vertical, 4)
     }
@@ -424,6 +496,7 @@ private struct UpdatesPage: View {
 
 private struct AboutPage: View {
     @ObservedObject private var updater = UpdateChecker.shared
+    @State private var copied = false
 
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -433,6 +506,39 @@ private struct AboutPage: View {
 
     private var repoURL: URL {
         URL(string: "https://github.com/\(UpdateChecker.owner)/\(UpdateChecker.repo)")!
+    }
+
+    /// Version, Mac and settings details for bug reports. It contains no song titles or personal data.
+    private func diagnosticsText() -> String {
+        let access = FeatureAccess.shared
+        let player = PlayerStore.shared
+        let hasNotch = NSScreen.screens.contains { $0.safeAreaInsets.top > 0 }
+
+        var lines: [String] = []
+        lines.append("MusicControl \(updater.versionDescription)")
+        lines.append("macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        lines.append("Mac model: \(hardwareModel())")
+        lines.append("Notch on a connected screen: \(hasNotch ? "yes" : "no")")
+        lines.append("Playback source: \(player.hasTrack ? player.sourceLabel : "nothing playing")")
+        if !player.permissionStatus.isEmpty {
+            lines.append("Permissions:")
+            lines.append(player.permissionStatus)
+        }
+        lines.append("Features:")
+        for feature in Feature.allCases {
+            lines.append("  \(feature.title): \(access.isActive(feature) ? "on" : "off")")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func copyDiagnostics() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(diagnosticsText(), forType: .string)
+        copied = true
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            copied = false
+        }
     }
 
     var body: some View {
@@ -445,10 +551,16 @@ private struct AboutPage: View {
             Text("Version \(updater.versionDescription)").foregroundStyle(.secondary)
 
             HStack(spacing: 18) {
-                Link("Source code", destination: repoURL)
+                Link("Downloads & support", destination: repoURL)
                 Link("Report a problem", destination: repoURL.appendingPathComponent("issues"))
             }
             .padding(.top, 4)
+
+            HStack(spacing: 12) {
+                Button(copied ? "Copied" : "Copy diagnostics") { copyDiagnostics() }
+                Button("Show welcome again") { WelcomeWindowController.shared.show() }
+            }
+            .padding(.top, 2)
 
             Divider().padding(.vertical, 8)
 
@@ -467,4 +579,16 @@ private struct AboutPage: View {
         }
         .padding(24)
     }
+}
+
+// MARK: - Helpers
+
+/// For example "MacBookPro18,3". Useful when someone reports a bug.
+private func hardwareModel() -> String {
+    var size = 0
+    sysctlbyname("hw.model", nil, &size, nil, 0)
+    guard size > 0 else { return "unknown" }
+    var buffer = [CChar](repeating: 0, count: size)
+    sysctlbyname("hw.model", &buffer, &size, nil, 0)
+    return String(cString: buffer)
 }
